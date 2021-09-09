@@ -1,0 +1,522 @@
+<template>
+  <div>
+    <el-row class="toolPanel">
+      <div style="float: right">
+        <el-dropdown @command="handleCommand">
+          <el-tooltip class="item" effect="dark" content="生成镜像" placement="top-start">
+            <el-button type="success" size="mini" icon="el-icon-circle-plus" circle style="float: right"></el-button>
+          </el-tooltip>
+          <el-dropdown-menu slot="dropdown">
+            <el-dropdown-item command="2">命令生成</el-dropdown-item>
+            <el-dropdown-item command="1">文件生成</el-dropdown-item>
+          </el-dropdown-menu>
+        </el-dropdown>
+      </div>
+    </el-row>
+    <el-row>
+      <el-table
+        :data="tableData.rows"
+        :height="tableData.height"
+        stripe
+        border
+        style="width: 100%">
+        <el-table-column
+          type="index"
+          width="50">
+        </el-table-column>
+        <el-table-column
+          prop="name"
+          label="镜像名"
+          width="200">
+        </el-table-column>
+        <el-table-column
+          prop="id"
+          label="镜像ID"
+          width="200">
+        </el-table-column>
+        <el-table-column
+          prop="tag"
+          width="150"
+          label="Tag">
+        </el-table-column>
+        <el-table-column
+          prop="createTime"
+          width="180"
+          label="创建时间">
+        </el-table-column>
+        <el-table-column
+          prop="size"
+          label="大小"
+          width="150">
+        </el-table-column>
+        <el-table-column label="操作" width="150">
+          <template slot-scope="scope">
+            <el-tooltip class="item" effect="dark" content="删除" placement="top-start">
+              <el-button type="danger" icon="el-icon-delete" size="mini" @click="handleDeleteMirror(scope.$index, scope.row)" circle></el-button>
+            </el-tooltip>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-row>
+      <el-row class="toolPanel">
+        <div style="float: right">
+          <el-tooltip class="item" effect="dark" content="创建容器" placement="top-start">
+            <el-button type="success" size="mini" icon="el-icon-circle-plus" circle style="float: right" @click="addContainer"></el-button>
+          </el-tooltip>
+        </div>
+      </el-row>
+      <el-row>
+        <el-table
+          :data="tableDataContainer.rows"
+          :height="tableDataContainer.height"
+          stripe
+          border
+          style="width: 100%">
+          <el-table-column
+            type="index"
+            width="50">
+          </el-table-column>
+          <el-table-column
+            prop="container_name"
+            label="容器名"
+            width="160">
+          </el-table-column>
+          <el-table-column
+            prop="container_ID"
+            label="容器ID"
+            width="150">
+          </el-table-column>
+          <el-table-column
+            prop="mirror_name"
+            width="160"
+            label="镜像名">
+          </el-table-column>
+          <el-table-column
+            prop="command"
+            width="110"
+            label="命令">
+          </el-table-column>
+          <el-table-column
+            prop="create_time"
+            label="创建时间"
+            width="160">
+          </el-table-column>
+          <el-table-column
+            prop="state"
+            label="状态"
+            width="100">
+          </el-table-column>
+          <el-table-column label="操作" width="350">
+            <template slot-scope="scope">
+                <el-button type="success" size="mini" @click="handleStartContainer(scope.$index, scope.row)">开启</el-button>
+                <el-button type="info"  size="mini" @click="handleStopContainer(scope.$index, scope.row)">结束</el-button>
+                <el-button type="warning"  size="mini" @click="handleRestartContainer(scope.$index, scope.row)">重启</el-button>
+                <el-button type="danger" size="mini" @click="handleDeleteContainer(scope.$index, scope.row)">删除</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+    </el-row>
+    <el-dialog title="生成镜像"  width="40%" destroy-on-close :close-on-click-modal="false":visible.sync="dialogFormVisibleAddMirror">
+      <el-form :model="mirrorFormAdd" style="margin-left: 0%" :rules="rulesAddMirror" ref="mirrorFormAdd" size="mini" label-width="130px" class="demo-ruleForm">
+        <el-form-item label="命令：" prop="command">
+          <el-input
+            style="height: 50%"
+            type="textarea"
+            :autosize="{ minRows: 2, maxRows: 4}"
+            placeholder="请输入命令"
+            v-model="mirrorFormAdd.command">
+          </el-input>
+        </el-form-item>
+        <el-upload
+          class="upload-demo"
+          action=""
+          ref="upload"
+          :on-change="handleChange"
+          :auto-upload="false"
+          :limit="1"
+        >
+          <el-button slot="trigger" size="small" style="margin-left: 130px" type="primary">选取文件</el-button>
+          <el-button style="margin-left: 10px;" size="small" type="success" @click="submitUpload">上传到服务器</el-button>
+          <div slot="tip" class="el-upload__tip" style="margin-left: 23%">只能上传dockerfile文件</div>
+        </el-upload>
+      </el-form>
+    </el-dialog>
+    <el-dialog title="生成镜像"  width="40%" destroy-on-close :close-on-click-modal="false":visible.sync="dialogFormVisibleAddMirrorByFile">
+      <el-upload
+        class="upload-demo"
+        action=""
+        ref="upload"
+        :on-change="handleChange"
+        :auto-upload="false"
+        :limit="1"
+       >
+        <el-button slot="trigger" size="small" type="primary">选取文件</el-button>
+        <el-button style="margin-left: 10px;" size="small" type="success" @click="submitUpload">上传到服务器</el-button>
+        <div slot="tip" class="el-upload__tip">只能上传dockerfile文件</div>
+      </el-upload>
+    </el-dialog>
+    <el-dialog title="创建容器" :close-on-click-modal="false":visible.sync="dialogFormVisibleAddContainer">
+      <el-form :model="containerFormAdd" style="margin-left: 27%" :rules="rulesAddContainer" ref="containerFormAdd" size="mini" label-width="130px" class="demo-ruleForm">
+        <el-form-item label="镜像名：" prop="imageName">
+          <el-select v-model="containerFormAdd.imageName">
+            <el-option
+              v-for="item in imageNameArr"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value">
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="submitFormAddContainer('containerFormAdd')">生成镜像</el-button>
+          <el-button @click="cancleAddContainer('containerFormAdd')">取消</el-button>
+        </el-form-item>
+      </el-form>
+    </el-dialog>
+
+  </div>
+</template>
+
+<script>
+import $ from "jquery";
+import {
+  buildImage, createContainer,
+  getContainerList,
+  getImageList, removeContainer,
+  removeImage,
+  restartContainer,
+  startContainer,
+  stopContainer
+} from "../../api/docker";
+
+export default {
+  name: 'dockerManagement',
+  data() {
+    return {
+      tableData: {
+        height: 300,
+        rows: [],
+      }, // 表格数据源
+      tableDataContainer: {
+        height: 300,
+        rows: [],
+      }, // 表格数据源
+      mirrorFormAdd: {
+        command: ''
+      },
+      containerFormAdd: {
+        imageName: ''
+      },
+      rulesAddMirror: {
+        command: [
+          { required: true, message: '请输入命令', trigger: 'blur' },
+          { min: 2, max: 150, message: '长度在 2 到 150 个字符', trigger: 'blur' }
+        ]
+      },
+      rulesAddContainer: {
+        imageName: [
+          { required: true, message: '请选择镜像名', trigger: 'change' }
+        ]
+      },
+      deviceNameOptions: [],
+      conNameArr: [],
+      conNameId: [],
+      idProtocol: '',
+      // 是否加载数据
+      loading:true,
+      deviceNameSearch: '',
+      dialogFormVisibleAddMirror: false,
+      dialogFormVisibleAddMirrorByFile: false,
+      dialogFormVisibleAddContainer: false,
+      fileData: {},
+      dockerFile:false,
+      dockerFileSelect: false,
+      docSelect: false,
+      imageNameArr:[]
+    }
+  },
+  created () {
+    this.getImageList();
+    this.getContainerList();
+  },
+  methods: {
+    getImageList(){
+      getImageList().then(res=>{
+        if(res.data.result){
+          let data = res.data.data;
+          let dataTable = [];
+          for(let i =0;i<data.length ;i++){
+            data[i].createTime = this.changeTime(data[i].createTime)
+            data[i].id = data[i].id.split(':')[1].substring(0,11)
+            dataTable.push(data[i]);
+            this.imageNameArr.push({label:data[i].name,value:data[i].name})
+          }
+          this.tableData.rows = dataTable;
+        }
+      })
+    },
+    getContainerList(){
+      getContainerList().then(res=>{
+        if(res.data.result){
+          let data = res.data.data;
+          let container = [];
+            for(let i=0;i<data.length; i++){
+              let conTemp = {};
+               let con = data[i];
+               conTemp.container_name = con.containerName;
+               conTemp.container_ID = con.containerId.substring(0,11);
+               conTemp.mirror_name = con.imageName;
+               conTemp.state = con.status;
+               conTemp.create_time = this.changeTime(con.createTime);
+               conTemp.command = con.commandPath;
+               container.push(conTemp);
+            }
+          this.tableDataContainer.rows = container;
+        }
+
+      })
+    },
+
+
+    handleCommand(command){
+        if(command == 2){
+          this.dialogFormVisibleAddMirror = true;
+          this.docSelect = true;
+          this.dockerFileSelect = false;
+        }else {
+          this.dialogFormVisibleAddMirrorByFile = true;
+          this.dockerFileSelect = true;
+          this.docSelect = false;
+        }
+    },
+    handleChange(file){
+        if(file.raw.type != ""){
+            this.$message.error("请上传dockerfile文件格式")
+            return false;
+        }else {
+          this.dockerFile = true;
+          this.fileData = file.raw;
+          return true;
+        }
+    },
+
+    submitUpload(){
+      let reader = new FileReader();
+      reader.readAsText(this.fileData)
+        let image = {};
+        image.type = this.dockerFileSelect == true?1:2;
+        image.Path = this.fileData.webkitRelativePath == ""? '/home/pi/project/dockerfileTest':this.fileData.webkitRelativePath;
+        image.fileName = this.fileData.name;
+        reader.onload = function (){
+          image.data = this.result;
+          buildImage(image).then(res=>{
+            if(res.data.result){
+              this.$message({
+                type: 'success',
+                message: '上传成功'
+              });
+              this.getImageList();
+            }else {
+              this.$message({
+                type: 'error',
+                message: '上传失败'
+              });
+            }
+          })
+        }
+    },
+
+    addContainer(){
+      this.dialogFormVisibleAddContainer = true;
+    },
+
+
+    //创建容器
+    submitFormAddContainer(mirrorFormAdd){
+      this.$refs[mirrorFormAdd].validate((valid) => {
+        if (valid) {
+          createContainer(this.containerFormAdd.imageName).then(res=>{
+            if(res.data.result){
+              this.$message({
+                type: 'success',
+                message: '创建成功'
+              });
+              this.dialogFormVisibleAddContainer = false;
+              this.getContainerList();
+            }else {
+              this.$message({
+                type: 'error',
+                message: '创建失败'
+              });
+            }
+          })
+        }
+      })
+    },
+
+    cancleAddMirror(mirrorFormAdd){
+      this.$refs[mirrorFormAdd].resetFields();
+      this.dialogFormVisibleAddMirror = false;
+    },
+
+    cancleAddContainer(containerFormAdd){
+      this.$refs[containerFormAdd].resetFields();
+      this.dialogFormVisibleAddContainer = false;
+    },
+
+    //删除镜像
+    handleDeleteMirror(index, row) {
+      removeImage(row.name).then(res=>{
+        if(res.data.result){
+          this.$message({
+            type: 'success',
+            message: '删除成功'
+          });
+          this.getImageList();
+        }else {
+          this.$message({
+            type: 'error',
+            message: '删除失败'
+          });
+        }
+  })
+    },
+
+    //开启容器
+    handleStartContainer(index, row) {
+      startContainer(row).then(res=>{
+        if(res.data.result){
+          this.$message({
+            type: 'success',
+            message: '开启成功'
+          });
+          this.getContainerList();
+        }else{
+          this.$message({
+            type: 'error',
+            message: '开启失败'
+          });
+        }
+      })
+    },
+
+    //结束容器
+    handleStopContainer(index, row) {
+      stopContainer(row).then(res=>{
+        if(res.data.result){
+          this.$message({
+            type: 'success',
+            message: '结束成功'
+          });
+          this.getContainerList();
+        }else{
+          this.$message({
+            type: 'error',
+            message: '容器正在使用中'
+          });
+        }
+      })
+    },
+
+    //重启容器
+    handleRestartContainer(index, row) {
+      restartContainer(row).then(res=>{
+        if(res.data.result){
+          this.$message({
+            type: 'success',
+            message: '重启成功'
+          });
+          this.getContainerList();
+        }else{
+          this.$message({
+            type: 'error',
+            message: '重启失败'
+          });
+        }
+      })
+    },
+
+    //删除容器
+    handleDeleteContainer(index, row) {
+      removeContainer(row).then(res=>{
+        if(res.data.result){
+          this.$message({
+            type: 'success',
+            message: '删除成功'
+          });
+          this.getContainerList();
+        }else{
+          this.$message({
+            type: 'error',
+            message: '删除失败'
+          });
+        }
+      })
+    },
+
+    handleSizeChange: function (size) {
+      this.tableData.pageSize = size;
+      //this.handleCurrentChange(this.currentPage);
+      this.selectFromRoutingStatic();
+    },
+    handleCurrentChange: function (currentPage) {
+      this.tableData.currentPage = currentPage;
+      //this.currentChangePage(this.tableData,currentPage)
+      this.selectFromRoutingStatic();
+    },
+    //分页方法（重点）
+    currentChangePage(list,currentPage) {
+      let from = (currentPage - 1) * this.tableData.pageSize;
+      let to = currentPage * this.tableData.pageSize;
+      this.tempList = [];
+      for (; from < to; from++) {
+        if (list[from]) {
+          this.tempList.push(list[from]);
+        }
+      }
+    },
+    handleSizeChangeContainer: function (size) {
+      this.tableDataContainer.pageSize = size;
+      //this.handleCurrentChange(this.currentPage);
+      this.selectFromRoutingStatic();
+    },
+    handleCurrentChangeContainer: function (currentPage) {
+      this.tableDataContainer.currentPage = currentPage;
+      //this.currentChangePage(this.tableData,currentPage)
+      this.selectFromRoutingStatic();
+    },
+
+
+
+    indexMethodContainer(index) {
+      return parseInt((this.tableDataContainer.currentPage - 1) * this.tableDataContainer.pageSize + index + 1)
+    },
+    // 更新表格高度
+    updateHeight() {
+      this.tableData.height =
+        window.innerHeight -
+        $(".paginationPanel").height() -
+        $(".toolPanel").height()-120;
+    },
+    changeTime(time){
+      let now = new Date(time),
+        Y = now.getFullYear(),
+        M = now.getMonth()+1,
+        D= now.getDate(),
+        h = now.getHours(),
+        m = now.getMinutes(),
+        s = now.getSeconds();
+        M = M<10?'0'+M:M;
+        D = D<10?'0'+D:D;
+        h = h<10?'0'+h:h;
+        m = m<10?'0'+m:m;
+        s = s<10?'0'+s:s;
+    return Y+'-'+M+'-'+D+' '+h+':'+m+':'+s;
+}
+  }
+}
+</script>
+
+<style>
+
+</style>

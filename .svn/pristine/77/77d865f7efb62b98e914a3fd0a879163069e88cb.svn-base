@@ -1,0 +1,659 @@
+<template>
+  <div>
+          <el-row class="toolPanel">
+            <el-select v-model="deviceNameSearch" filterable
+                       allow-create @change="selectDevice(deviceNameSearch)"filterable clearable placeholder="请选择">
+              <el-option
+                v-for="item in deviceNameOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value">
+              </el-option>
+            </el-select>
+            <div style="float: right">
+              <span style="font-size: medium">操作：</span>
+              <el-tooltip class="item" effect="dark" content="添加" placement="top-start">
+                <el-button type="success" size="mini" icon="el-icon-circle-plus" circle style="float: right" @click="addDevice"></el-button>
+              </el-tooltip>
+            </div>
+            <div style="margin-left: 17.7%;margin-top: -3.2%;"><el-button slot="append" type="primary" icon="el-icon-search" @click="searchDevice"></el-button></div>
+          </el-row>
+          <el-row>
+            <el-table
+              :data="tableData.rows"
+              :height="tableData.height"
+              stripe
+              border
+              style="width: 100%">
+              <el-table-column
+                type="index"
+                :index="indexMethod"
+                width="50">
+              </el-table-column>
+              <el-table-column
+                prop="device_name"
+                label="设备名称"
+                width="150">
+              </el-table-column>
+              <el-table-column
+                prop="device_type"
+                label="设备类型"
+                width="150">
+              </el-table-column>
+              <el-table-column
+                prop="deviceStatus"
+                label="设备状态">
+              </el-table-column>
+              <el-table-column
+                prop="position"
+                label="位置">
+              </el-table-column>
+              <el-table-column
+                prop="connector_name"
+                label="连接器名称"
+                width="150">
+              </el-table-column>
+              <el-table-column
+                prop="con_type"
+                label="连接器类型">
+              </el-table-column>
+<!--              <el-table-column
+                prop="ip_addr"
+                label="地址">
+              </el-table-column>
+              <el-table-column
+                prop="port"
+                label="端口号"
+                width="70"
+              >
+              </el-table-column>-->
+              <el-table-column
+                prop="ipEnable"
+                label="支持IP连接"
+                width="100">
+              </el-table-column>
+              <el-table-column label="操作" width="150">
+                <template slot-scope="scope">
+                  <el-tooltip class="item" effect="dark" content="编辑" placement="top-start">
+                    <el-button type="primary" icon="el-icon-edit" size="mini" @click="handleEdit(scope.$index, scope.row)" circle></el-button>
+                  </el-tooltip>
+                  <el-tooltip class="item" effect="dark" content="删除" placement="top-start">
+                    <el-button type="danger" icon="el-icon-delete" size="mini" @click="handleDelete(scope.$index, scope.row)" circle></el-button>
+                  </el-tooltip>
+                  <el-tooltip class="item" effect="dark" content="跳转" placement="top-start">
+                    <el-button type="success" size="mini" @click="jump(scope.row)" circle><Icon type="md-undo" /></el-button>
+                  </el-tooltip>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-row>
+          <el-row class="paginationPanel">
+            <el-pagination
+              background
+              @size-change="handleSizeChange"
+              @current-change="handleCurrentChange" :current-page="this.tableData.currentPage"
+              :page-sizes="[10, 20, 50, 100]"
+              :page-size="this.tableData.pageSize"
+              layout="total,sizes, prev, pager,next,jumper"
+              :total="this.tableData.total">
+            </el-pagination>
+          </el-row>
+        <el-dialog title="添加设备" :close-on-click-modal="false":visible.sync="dialogFormVisibleAdd">
+          <el-form :model="deviceFormAdd" style="margin-left: 27%" :rules="rulesAdd" ref="ruleFormAdd" size="mini" label-width="130px" class="demo-ruleForm">
+            <el-form-item label="设备名称：" prop="deviceName">
+              <el-input v-model="deviceFormAdd.deviceName" style="width: auto"></el-input>
+            </el-form-item>
+            <el-form-item label="设备类型：" prop="deviceType" style="width: 60%">
+              <el-input v-model="deviceFormAdd.deviceType" style="width: auto"></el-input>
+            </el-form-item>
+            <el-form-item label="设备状态：" prop="deviceStatus" style="width: 60%">
+              <el-select v-model="deviceFormAdd.deviceStatus">
+                <el-option label="在线" value="1"></el-option>
+                <el-option label="离线" value="0"></el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item label="位置：" prop="position" style="width: 60%">
+              <el-input v-model="deviceFormAdd.position" style="width: auto"></el-input>
+            </el-form-item>
+            <el-form-item label="连接器名称：" prop="conName" style="width: 60%">
+              <el-select v-model="deviceFormAdd.conName">
+                <el-option
+                  v-for="item in conNameArr"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value">
+                </el-option>
+              </el-select>
+            </el-form-item>
+            <!--        <el-form-item label="连接器类型：" prop="conType" style="width: 60%">
+                      <el-select v-model="deviceFormAdd.conType">
+                        <el-option
+                          v-for="item in conTypeArr"
+                          :key="item.value"
+                          :label="item.label"
+                          :value="item.value">
+                        </el-option>
+                      </el-select>
+                    </el-form-item>-->
+<!--            <el-form-item label="ip地址：" prop="ipAddr" style="width: 60%">
+              <el-input v-model="deviceFormAdd.ipAddr" style="width: auto"></el-input>
+            </el-form-item>
+            <el-form-item label="端口号：" prop="port" style="width: 60%">
+              <el-input v-model="deviceFormAdd.port" style="width: auto"></el-input>
+            </el-form-item>-->
+            <el-form-item label="支持ip连接：" prop="ipEnable" style="width: 60%">
+              <el-select v-model="deviceFormAdd.ipEnable">
+                <el-option label="是" value="1"></el-option>
+                <el-option label="否" value="0"></el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" @click="submitFormAdd('ruleFormAdd')">确定</el-button>
+              <el-button @click="cancleAdd('ruleFormAdd')">取消</el-button>
+            </el-form-item>
+          </el-form>
+        </el-dialog>
+        <el-dialog title="编辑设备"  :close-on-click-modal="false" :modal-append-to-body = "false" :close-on-press-escape="false" :visible.sync="dialogFormVisibleEdit">
+          <el-form :model="deviceFormEdit" style="margin-left: 27%" :rules="rulesEdit" ref="deviceFormEdit" size="mini" label-width="130px" class="demo-ruleForm">
+            <el-form-item label="设备名称：" prop="deviceName">
+              <el-input disabled v-model="deviceFormEdit.deviceName" style="width: auto"></el-input>
+            </el-form-item>
+            <el-form-item label="设备类型：" prop="deviceType" style="width: 60%">
+              <el-input v-model="deviceFormEdit.deviceType" style="width: auto"></el-input>
+            </el-form-item>
+            <el-form-item label="设备状态：" prop="deviceStatus" style="width: 60%">
+              <el-select v-model="deviceFormEdit.deviceStatus">
+                <el-option label="在线" value="1"></el-option>
+                <el-option label="离线" value="0"></el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item label="位置：" prop="position" style="width: 60%">
+              <el-input v-model="deviceFormEdit.position" style="width: auto"></el-input>
+            </el-form-item>
+            <el-form-item label="连接器名称：" prop="conName" style="width: 60%">
+              <el-select v-model="deviceFormEdit.conName">
+                <el-option
+                  v-for="item in conNameArr"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value">
+                </el-option>
+              </el-select>
+            </el-form-item>
+            <!--        <el-form-item label="连接器类型：" prop="conType" style="width: 60%">
+                      <el-select v-model="deviceFormEdit.conType">
+                        <el-option
+                          v-for="item in conTypeArr"
+                          :key="item.value"
+                          :label="item.label"
+                          :value="item.value">
+                        </el-option>
+                      </el-select>
+                    </el-form-item>-->
+<!--            <el-form-item label="ip地址：" prop="ipAddr" style="width: 60%">
+              <el-input v-model="deviceFormEdit.ipAddr" style="width: auto"></el-input>
+            </el-form-item>
+            <el-form-item label="端口号：" prop="port" style="width: 60%">
+              <el-input v-model="deviceFormEdit.port" style="width: auto"></el-input>
+            </el-form-item>-->
+            <el-form-item label="支持ip连接：" prop="ipEnable" style="width: 60%">
+              <el-select v-model="deviceFormEdit.ipEnable">
+                <el-option label="是" value="1"></el-option>
+                <el-option label="否" value="0"></el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" @click="submitFormEdit('deviceFormEdit')">确定</el-button>
+              <el-button @click="cancleEdit('deviceFormEdit')">取消</el-button>
+            </el-form-item>
+          </el-form>
+        </el-dialog>
+  </div>
+</template>
+
+<script>
+
+import {deleteDeviceByDeviceName, selectAllFromDevice, addDevice, updateDeviceByDeviceName} from "../../api/device";
+import $ from "jquery";
+import {selectAllFromDeviceVariable} from "../../api/deviceVariable";
+export default {
+  name: 'equipmentList',
+  data() {
+    return {
+      tableData: {
+        height: 600,
+        sort: "",
+        order: "",
+        page: 1,
+        rows: [],
+        currentPage: 1,
+        pageSize: 10,
+        total: null,
+      }, // 表格数据源
+      deviceFormAdd: {
+        deviceName: '',
+        deviceType: '',
+        deviceStatus: '',
+        position: '',
+        conName: '',
+        conType: '',
+        ipAddr: '',
+        port: '',
+        ipEnable: ''
+      },
+      deviceFormEdit: {
+        deviceName: '',
+        deviceType: '',
+        deviceStatus: '',
+        position: '',
+        conName: '',
+        conType: '',
+        ipAddr: '',
+        port: '',
+        ipEnable: ''
+      },
+      rulesAdd: {
+        deviceName: [
+          { required: true, message: '请输入设备名称', trigger: 'blur' },
+          { min: 2, max: 200, message: '长度在 2 到 200 个字符', trigger: 'blur' }
+        ],
+        deviceType: [
+          { required: true, message: '请输入设备类型', trigger: 'blur' },
+          { min: 2, max: 15, message: '长度在 2 到 15 个字符', trigger: 'blur' }
+        ],
+        deviceStatus: [
+          { required: true, message: '请选择设备状态', trigger: 'change' }
+        ],
+        position: [
+          { required: true, message: '请输入位置', trigger: 'blur' },
+          { min: 2, max: 15, message: '长度在 2 到 15 个字符', trigger: 'blur' }
+        ],
+        conName: [
+          { required: true, message: '请选择连接器名称', trigger: 'change' }
+        ],
+        conType: [
+          { required: true, message: '请选择连接器类型', trigger: 'change' }
+        ],
+        ipAddr: [
+            { required: true, message: '请输入ip地址', trigger: 'blur' },
+            { min: 2, max: 15, message: '长度在 6 到 18 个字符', trigger: 'blur' }
+            ],
+        port: [
+          { required: true, message: '请输入端口号', trigger: 'blur' },
+          { min: 2, max: 3, message: '长度在2 到 3 个字符', trigger: 'blur' }
+        ],
+        ipEnable: [
+          { required: true, message: '请选择是否支持ip连接', trigger: 'change' }
+        ]
+      },
+      rulesEdit: {
+        deviceName: [
+          { required: true, message: '请输入设备名称', trigger: 'blur' },
+          { min: 2, max: 200, message: '长度在 2 到 200 个字符', trigger: 'blur' }
+        ],
+        deviceType: [
+          { required: true, message: '请输入设备类型', trigger: 'blur' },
+          { min: 2, max: 15, message: '长度在 2 到 15 个字符', trigger: 'blur' }
+        ],
+        deviceStatus: [
+          { required: true, message: '请选择设备状态', trigger: 'change' }
+        ],
+        position: [
+          { required: true, message: '请输入位置', trigger: 'blur' },
+          { min: 2, max: 15, message: '长度在 2 到 15 个字符', trigger: 'blur' }
+        ],
+        conName: [
+          { required: true, message: '请选择连接器名称', trigger: 'change' }
+        ],
+        conType: [
+          { required: true, message: '请选择连接器类型', trigger: 'change' }
+        ],
+        ipAddr: [
+          { required: true, message: '请输入ip地址', trigger: 'blur' },
+          { min: 2, max: 15, message: '长度在 6 到 18 个字符', trigger: 'blur' }
+        ],
+        port: [
+          { required: true, message: '请输入端口号', trigger: 'blur' },
+          { min: 2, max: 4, message: '长度在2 到 4 个字符', trigger: 'blur' }
+        ],
+        ipEnable: [
+          { required: true, message: '请选择是否支持ip连接', trigger: 'change' }
+        ]
+      },
+      deviceNameOptions: [],
+      conNameArr: [],
+      conNameId: [],
+      idProtocol: '',
+      // 是否加载数据
+      loading:true,
+      deviceNameSearch: '',
+      dialogFormVisibleAdd: false,
+      dialogFormVisibleEdit: false
+    }
+  },
+  created () {
+    this.selectAllFromDevice();
+  },
+  methods: {
+    selectAllFromDevice(){
+      selectAllFromDevice(this.deviceNameSearch,(this.tableData.currentPage-1)*this.tableData.pageSize,this.tableData.pageSize,this.tableData.sort,this.tableData.order).then(res => {
+        this.updateHeight();
+        if(res.data.result){
+          this.deviceNameOptions = [];
+          this.conNameId = res.data.data.conNameId;
+          this.tableData.rows = res.data.data.data;
+          this.tableData.total =  res.data.data.count;
+          let devicedata = res.data.data.deviceName;
+          let conNameList =  res.data.data.conName;
+          this.idProtocol = res.data.data.idProtocol;
+          for(let i =0; i<devicedata.length;i++){
+            this.deviceNameOptions.push({value:devicedata[i]});
+          }
+          for(let i =0; i<conNameList.length;i++){
+            this.conNameArr.push({value:conNameList[i]});
+          }
+        }else{
+          this.$message({
+            type: 'error',
+            message: '查询失败!'
+          });
+        }
+      })
+    },
+
+    selectDevice(deviceNameSearch){
+        this.deviceNameSearch = deviceNameSearch;
+    },
+
+    searchDevice(){
+      this.selectAllFromDevice()
+    },
+
+    addDevice(){
+      this.dialogFormVisibleAdd = true;
+    },
+
+
+    handleEdit(index, row){
+      this.dialogFormVisibleEdit = true;
+      this.deviceFormEdit.deviceName = row.device_name;
+      this.deviceFormEdit.deviceType = row.device_type;
+      this.deviceFormEdit.deviceStatus = row.device_status ==1?"在线":"离线";
+      this.deviceFormEdit.position = row.position;
+      this.deviceFormEdit.conName =  row.connector_name;
+      this.deviceFormEdit.ipEnable = row.ip_enable = 1?"是":'否';
+      this.deviceFormEdit.ipAddr = row.ip_addr;
+      this.deviceFormEdit.port = row.port+"";
+    },
+
+    jump(row){
+      let protocol = this.idProtocol[row.connector_type]
+      if(protocol == 'modbus'){
+        this.$router.push({
+                    path: '/dataCollection/modbusVariableList',
+                    // name: 'mallList',
+                    query: {
+                        name: row.device_name,
+                        id: row.id
+                   }
+        })
+      }else if(protocol == 'mqtt'){
+        this.$router.push({
+          path: '/dataCollection/mqttVariableList',
+          // name: 'mallList',
+          query: {
+            name: row.device_name,
+            id: row.id
+          }
+        })
+      }else if(protocol == 'mitsubishi'){
+        this.$router.push({
+          path: '/dataCollection/mitsubishiVariableList',
+          // name: 'mallList',
+          query: {
+            name: row.device_name,
+            id: row.id
+          }
+        })
+      }else if(protocol == 'opcua'){
+        this.$router.push({
+          path: '/dataCollection/opcuaVariableList',
+          // name: 'mallList',
+          query: {
+            name: row.device_name,
+            id: row.id
+          }
+        })
+      }else if(protocol == 'ble'){
+        this.$router.push({
+          path: '/dataCollection/bleVariableList',
+          // name: 'mallList',
+          query: {
+            name: row.device_name,
+            id: row.id
+          }
+        })
+      }else if(protocol == 'bacnet'){
+        this.$router.push({
+          path: '/dataCollection/bacnetVariableList',
+          // name: 'mallList',
+          query: {
+            name: row.device_name,
+            id: row.id
+          }
+        })
+      }else if(protocol == 'rtu'){
+        this.$router.push({
+          path: '/dataCollection/rtuVariableList',
+          // name: 'mallList',
+          query: {
+            name: row.device_name,
+            id: row.id
+          }
+        })
+      }else if(protocol == 'odbc'){
+        this.$router.push({
+          path: '/dataCollection/odbcVariableList',
+          // name: 'mallList',
+          query: {
+            name: row.device_name,
+            id: row.id
+          }
+        })
+      }else if(protocol == 'serial'){
+        this.$router.push({
+          path: '/dataCollection/serialVariableList',
+          // name: 'mallList',
+          query: {
+            name: row.device_name,
+            id: row.id
+          }
+        })
+      }else if(protocol == 'request'){
+        this.$router.push({
+          path: '/dataCollection/requestVariableList',
+          // name: 'mallList',
+          query: {
+            name: row.device_name,
+            id: row.id
+          }
+        })
+      }
+    },
+
+    submitFormAdd(ruleFormAdd){
+      this.$refs[ruleFormAdd].validate((valid) => {
+        if (valid) {
+          this.$confirm('确定添加吗?', '提示', {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }).then(() => {
+            let device = {};
+             device.device_name = this.deviceFormAdd.deviceName;
+             device.device_type = this.deviceFormAdd.deviceType;
+             device.device_status = this.deviceFormAdd.deviceStatus;
+             device.position = this.deviceFormAdd.position;
+             device.connector_name = this.deviceFormAdd.conName;
+             device.ip_addr = this.deviceFormAdd.ipAddr;
+             device.port = this.deviceFormAdd.port;
+             device.ip_enable = this.deviceFormAdd.ipEnable;
+            addDevice(device).then(res=>{
+              if(res.data.result){
+                this.$refs[ruleFormAdd].resetFields();
+                this.dialogFormVisibleAdd = false;
+                this.$message({
+                  type: 'success',
+                  message: '添加成功!'
+                });
+                this.selectAllFromDevice();
+              }else if(res.data.code == 1){
+                this.$message({
+                  type: 'warning',
+                  message: '设备名称不能重复!'
+                });
+              }else{
+                this.$message({
+                  type: 'error',
+                  message: '添加失败!'
+                });
+              }
+            })
+          }).catch(() => {
+            /*this.$message({
+              type: 'info',
+              message: '已取消添加'
+            });*/
+          });
+        } else {
+          return false;
+        }
+      });
+    },
+
+    cancleAdd(ruleFormAdd){
+      this.$refs[ruleFormAdd].resetFields();
+      this.dialogFormVisibleAdd = false;
+    },
+
+    submitFormEdit(deviceFormEdit){
+      this.$refs[deviceFormEdit].validate((valid) => {
+        if (valid) {
+          this.$confirm('确定编辑吗?', '提示', {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }).then(() => {
+            let formEdit = this.deviceFormEdit;
+            let device = {};
+            device.device_name = formEdit.deviceName
+            device.device_type = formEdit.deviceType
+            device.device_status = formEdit.deviceStatus =="在线"? 1:0
+            device.position = formEdit.position
+            device.connector_name = formEdit.conName
+            device.ip_addr = formEdit.ipAddr
+            device.port = formEdit.port
+            device.ip_enable = formEdit.ipEnable =="是"?1:0
+            updateDeviceByDeviceName(device).then(res=>{
+              if(res.data.result){
+                this.$message({
+                  type: 'success',
+                  message: '编辑成功!'
+                });
+                this.$refs[deviceFormEdit].resetFields();
+                this.dialogFormVisibleEdit = false;
+                this.selectAllFromDevice();
+              }else{
+                this.$message({
+                  type: 'error',
+                  message: '编辑失败!'
+                });
+              }
+            })
+          }).catch(() => {
+            this.$message({
+              type: 'info',
+              message: '已取消编辑'
+            });
+          });
+        } else {
+          return false;
+        }
+      });
+    },
+
+    cancleEdit(deviceFormEdit){
+      this.$refs[deviceFormEdit].resetFields();
+      this.dialogFormVisibleEdit = false;
+    },
+
+    handleDelete(index, row) {
+      this.$confirm('确定删除吗?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        deleteDeviceByDeviceName(row.device_name).then(res=>{
+          if(res.status == 200){
+            this.$message({
+              type: 'success',
+              message: '删除成功!'
+            });
+            this.tableData.total = res.data.data;
+            let totalPage = Math.ceil(this.tableData.total)/this.tableData.pageSize;
+            this.tableData.currentPage = this.tableData.currentPage > totalPage ? totalPage : this.tableData.currentPage;
+            this.selectAllFromDevice();
+          }else{
+            this.$message({
+              type: 'success',
+              message: '删除失败!'
+            });
+          }
+        })
+      }).catch(() => {
+        /*this.$message({
+          type: 'info',
+          message: '已取消删除'
+        });*/
+      });
+    },
+
+
+    handleSizeChange: function (size) {
+      this.tableData.pageSize = size;
+      //this.handleCurrentChange(this.currentPage);
+      this.selectAllFromDevice();
+    },
+    handleCurrentChange: function (currentPage) {
+      this.tableData.currentPage = currentPage;
+      //this.currentChangePage(this.tableData,currentPage)
+      this.selectAllFromDevice();
+    },
+    //分页方法（重点）
+    currentChangePage(list,currentPage) {
+      let from = (currentPage - 1) * this.tableData.pageSize;
+      let to = currentPage * this.tableData.pageSize;
+      this.tempList = [];
+      for (; from < to; from++) {
+        if (list[from]) {
+          this.tempList.push(list[from]);
+        }
+      }
+    },
+    indexMethod(index) {
+      return parseInt((this.tableData.currentPage - 1) * this.tableData.pageSize + index + 1)
+    },
+    // 更新表格高度
+    updateHeight() {
+      this.tableData.height =
+        window.innerHeight -
+        $(".paginationPanel").height() -
+        $(".toolPanel").height()-120;
+    },
+  }
+}
+</script>
+
+<style>
+
+</style>

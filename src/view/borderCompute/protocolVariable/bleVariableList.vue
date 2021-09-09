@@ -1,0 +1,709 @@
+<template>
+  <div style="height: 80%">
+    <el-row class="basicCan">
+      <h2>设备名称： {{this.deviceName}}</h2>
+      <h3>json配置</h3>
+      <el-col :span="8"><div class="grid-content bg-purple"></div>
+        <el-form :model="ruleFormJson" :rules="rulesJson" ref="ruleFormJson" label-width="100px" class="demo-ruleForm">
+          <el-form-item label="name:" style="margin-left:10%;width: 80%;margin-top: 10%" prop="name">
+            <el-input
+              disabled
+              style="margin-left: 20%"
+            placeholder="请输入"
+            v-model="ruleFormJson.name">
+          </el-input>
+          </el-form-item>
+          <el-form-item label="MACAddress:" style="margin-left:10%;margin-top:-15px;width: 80%" prop="MACAddress">
+            <el-input
+            placeholder="请输入"
+            style="margin-left: 20%"
+            v-model="ruleFormJson.MACAddress">
+          </el-input>
+          </el-form-item>
+          <el-form-item label="addrType:" style="margin-left:10%;margin-top:-15px;width: 80%" prop="addrType">
+            <el-input
+              placeholder="请输入"
+              style="margin-left: 20%"
+              v-model="ruleFormJson.addrType">
+            </el-input>
+          </el-form-item>
+          <el-button style="margin-left: 45%;margin-top: 30px" type="primary" @click="submitFormSaveJson('ruleFormJson')">保存</el-button>
+          <el-button style="margin-left: 8%;margin-top: 10px" @click="resetFormJson('ruleFormJson')">重置</el-button>
+        </el-form>
+      </el-col>
+      <el-col :span="8"><div class="grid-content bg-purple"></div>
+        <el-form :model="ruleFormRpc" :rules="rulesRpc" ref="ruleFormRpc" label-width="100px" class="demo-ruleForm">
+          <el-form-item style="margin-left: 25%;width: 80%" prop="textareaJsonRpc">
+            rpcJson:<el-input
+              type="textarea"
+              placeholder="请输入json"
+              :rows="7"
+              v-model="ruleFormRpc.textareaJsonRpc">
+            </el-input>
+          </el-form-item>
+        </el-form>
+      </el-col>
+      <el-col :span="8"><div class="grid-content bg-purple"></div>
+        <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="100px" class="demo-ruleForm">
+          <el-form-item style="margin-left: 0%;width: 80%" prop="textareaJsonUpdate">
+            updateJson:
+            <el-input
+              type="textarea"
+              :rows="7"
+              placeholder="请输入json"
+              v-model="ruleForm.textareaJsonUpdate">
+            </el-input>
+          </el-form-item>
+          <el-button style="margin-left:-5%;" type="primary" @click="submitFormSave('ruleForm','ruleFormRpc')">保存</el-button>
+          <el-button style="margin-left: 8%;margin-top: 10px" @click="resetForm('ruleForm','ruleFormRpc')">重置</el-button>
+        </el-form>
+      </el-col>
+    </el-row>
+    <el-row class="toolPanel">
+      <div style="float: right">
+        <span style="font-size: medium">操作：</span>
+        <el-tooltip class="item" effect="dark" content="添加" placement="top-start">
+          <el-button type="success" size="mini" icon="el-icon-circle-plus" circle style="float: right" @click="addVariable"></el-button>
+        </el-tooltip>
+      </div>
+    </el-row>
+    <el-row>
+      <div class="headName">
+      <h3>变量列表(Ble配置)</h3>
+      <span>&nbsp;</span>
+      </div>
+      <el-table
+        :data="tableData.rows"
+        stripe
+        border
+        style="width: 100%">
+        <el-table-column
+          type="index"
+          :index="indexMethod"
+          width="50">
+        </el-table-column>
+        <el-table-column
+          prop="device_name"
+          label="设备名称"
+          width="150">
+        </el-table-column>
+        <el-table-column
+          prop="tag_category"
+          label="变量类别"
+          width="150">
+        </el-table-column>
+        <el-table-column
+          prop="key_express"
+          label="键"
+          width="150">
+        </el-table-column>
+        <el-table-column
+          prop="value_express"
+          label="method"
+          width="150">
+        </el-table-column>
+        <el-table-column
+          prop="tag_name"
+          label="UUID">
+        </el-table-column>
+        <el-table-column
+          prop="tag_type"
+          label="byteFrom">
+        </el-table-column>
+        <el-table-column
+          prop="function_code"
+          label="byteTo ">
+        </el-table-column>
+        <el-table-column
+          prop="description"
+          label="描述">
+        </el-table-column>
+        <el-table-column label="操作">
+          <template slot-scope="scope">
+            <el-tooltip class="item" effect="dark" content="编辑" placement="top-start">
+              <el-button type="primary" icon="el-icon-edit" size="mini" @click="handleEdit(scope.$index, scope.row)" circle></el-button>
+            </el-tooltip>
+            <el-tooltip class="item" effect="dark" content="删除" placement="top-start">
+              <el-button type="danger" icon="el-icon-delete" size="mini" @click="handleDelete(scope.$index, scope.row)" circle></el-button>
+            </el-tooltip>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-row>
+    <el-row class="paginationPanel">
+      <el-pagination
+        background
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange" :current-page="this.tableData.currentPage"
+        :page-sizes="[10, 20, 50, 100]"
+        :page-size="this.tableData.pageSize"
+        layout="total,sizes, prev, pager,next,jumper"
+        :total="this.tableData.total">
+      </el-pagination>
+    </el-row>
+    <el-dialog title="添加Ble变量"  :close-on-click-modal="false" :visible.sync="dialogFormVisibleAdd">
+      <el-form :model="bleFormAdd" style="margin-left: 27%" :rules="bleRulesAdd" ref="bleFormAdd" size="mini" label-width="130px" class="demo-ruleForm">
+        <el-form-item label="设备名称：" prop="deviceName" style="width: 60%">
+          <el-input v-model="bleFormAdd.deviceName" disabled style="width: auto"></el-input>
+        </el-form-item>
+        <el-form-item label="变量类别：" prop="tag_category" style="width: 60%">
+          <el-select v-model="bleFormAdd.tag_category">
+            <el-option label="attributes" value="attributes"></el-option>
+            <el-option label="telemetry" value="telemetry"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="键：" prop="key" style="width: 60%">
+          <el-input v-model="bleFormAdd.key" style="width: auto"></el-input>
+        </el-form-item>
+        <el-form-item label="method：" prop="method" style="width: 60%">
+          <el-input v-model="bleFormAdd.method" style="width: auto"></el-input>
+        </el-form-item>
+        <el-form-item label="UUID：" prop="UUID" style="width: 60%">
+          <el-input v-model="bleFormAdd.UUID" style="width: auto"></el-input>
+        </el-form-item>
+        <el-form-item label="byteFrom：" prop="byteFrom" style="width: 60%">
+          <el-input v-model="bleFormAdd.byteFrom" style="width: auto"></el-input>
+        </el-form-item>
+        <el-form-item label="byteTo：" prop="byteTo" style="width: 60%">
+          <el-input v-model="bleFormAdd.byteTo" style="width: auto"></el-input>
+        </el-form-item>
+        <el-form-item label="描述：" prop="description" style="width: 60%">
+          <el-input
+            type="textarea"
+            placeholder="请输入内容"
+            v-model="bleFormAdd.description"
+            maxlength="30"
+            show-word-limit
+          >
+          </el-input>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="submitBleFormAdd('bleFormAdd')">确定</el-button>
+          <el-button @click="cancleFormAdd('bleFormAdd')">取消</el-button>
+        </el-form-item>
+      </el-form>
+    </el-dialog>
+    <el-dialog title="编辑Ble变量"  :close-on-click-modal="false" :visible.sync="dialogFormVisibleEdit">
+      <el-form :model="bleFormEdit" style="margin-left: 27%" :rules="bleRulesEdit" ref="bleFormEdit" size="mini" label-width="130px" class="demo-ruleForm">
+        <el-form-item label="设备名称：" prop="deviceName" style="width: 60%">
+          <el-input v-model="bleFormEdit.deviceName" disabled style="width: auto"></el-input>
+        </el-form-item>
+        <el-form-item label="变量类别：" prop="tag_category" style="width: 60%">
+          <el-select disabled v-model="bleFormEdit.tag_category">
+            <el-option label="attributes" value="attributes"></el-option>
+            <el-option label="telemetry" value="telemetry"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="method：" prop="method" style="width: 60%">
+          <el-input v-model="bleFormEdit.method" style="width: auto"></el-input>
+        </el-form-item>
+        <el-form-item label="UUID：" prop="UUID" style="width: 60%">
+          <el-input v-model="bleFormEdit.UUID" style="width: auto"></el-input>
+        </el-form-item>
+        <el-form-item label="byteFrom：" prop="byteFrom" style="width: 60%">
+          <el-input v-model="bleFormEdit.byteFrom" style="width: auto"></el-input>
+        </el-form-item>
+        <el-form-item label="byteTo：" prop="byteTo" style="width: 60%">
+          <el-input v-model="bleFormEdit.byteTo" style="width: auto"></el-input>
+        </el-form-item>
+        <el-form-item label="描述：" prop="description" style="width: 60%">
+          <el-input
+            type="textarea"
+            placeholder="请输入内容"
+            v-model="bleFormEdit.description"
+            maxlength="30"
+            show-word-limit
+          >
+          </el-input>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="submitBleFormEdit('bleFormEdit')">确定</el-button>
+          <el-button @click="cancleFormEdit('bleFormEdit')">取消</el-button>
+        </el-form-item>
+      </el-form>
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+import $ from "jquery";
+import {
+  addDeviceVariable,
+  deleteDeviceVariableById,
+  selectAllFromDeviceVariable,
+  updateDeviceVariableById
+} from "../../../api/deviceVariable";
+import {
+  selectJsonUpdateJsonRpcJsonFromDeviceByDeviceName,
+  selectUpdateJsonRpcJsonFromDeviceByDeviceName,
+  updateDeviceByDeviceName
+} from "../../../api/device";
+
+export default {
+  name: "bleVariableList",
+  data() {
+    return {
+      tableData: {
+        sort: "",
+        order: "",
+        page: 1,
+        rows: [],
+        currentPage: 1,
+        pageSize: 10,
+        total: null,
+      },
+      ruleForm: {
+        textareaJsonUpdate: ''
+      },
+      ruleFormRpc:{
+        textareaJsonRpc:'',
+      },
+      ruleFormJson:{
+        name: '',
+        MACAddress: '',
+        addrType: ''
+      },
+      bleFormAdd: {
+        tag_category: '',
+        deviceName: '',
+        key: '',
+        method:'',
+        UUID: '',
+        byteFrom: '',
+        byteTo: '',
+        description: ''
+      },
+      bleFormEdit: {
+        tag_category: '',
+        deviceName: '',
+        key: '',
+        method:'',
+        UUID: '',
+        byteFrom: '',
+        byteTo: '',
+        description: ''
+      },
+      rules: {
+        textareaJson: [
+          { required: true, message: '请输入json', trigger: 'blur' },
+          { min: 1, max:1000,message: '长度在 1 到 1000 个字符',trigger: 'blur' }
+        ]
+      },
+      rulesRpc: {
+        textareaJsonRpc: [
+          { required: true, message: '请输入json', trigger: 'blur' },
+          { min: 1, max:1000,message: '长度在 1 到 1000 个字符',trigger: 'blur' }
+        ]
+      },
+      rulesJson: {
+        name: [
+          { required: true, message: '请输入', trigger: 'blur' },
+          { min: 1, max:1000,message: '长度在 1 到 1000 个字符',trigger: 'blur' }
+        ],
+        MACAddress: [
+          { required: true, message: '请输入', trigger: 'blur' },
+          { min: 1, max:100,message: '长度在 1 到 100 个字符', trigger: 'blur' }
+        ],
+        addrType: [
+          { required: true, message: '请输入', trigger: 'blur' },
+          { min: 1, max:100,message: '长度在 1 到 100 个字符', trigger: 'blur' }
+        ]
+      },
+      bleRulesAdd: {
+        tag_category: [
+          { required: true, message: '请选择变量类别', trigger: 'change' }
+        ],
+        key: [
+          {required: true, message: '请输入', trigger: 'blur'},
+          {min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur'}
+        ],
+        method: [
+          {required: true, message: '请输入', trigger: 'blur'},
+          {min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur'}
+        ],
+        UUID: [
+          {required: true, message: '请输入', trigger: 'blur'},
+          {min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur'}
+        ],
+        byteFrom: [
+          {required: true, message: '请输入', trigger: 'blur'},
+          {min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur'}
+        ],
+        byteTo: [
+          {required: true, message: '请输入', trigger: 'blur'},
+          {min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur'}
+        ],
+        description: [
+          {required: true, message: '请输入描述信息', trigger: 'blur'},
+          {min: 1, max: 30, message: '长度在 1 到 30 个字符', trigger: 'blur'}
+        ]
+      },
+      bleRulesEdit: {
+        tag_category: [
+          { required: true, message: '请选择变量类别', trigger: 'change' }
+        ],
+        key: [
+          {required: true, message: '请输入', trigger: 'blur'},
+          {min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur'}
+        ],
+        method: [
+          {required: true, message: '请输入', trigger: 'blur'},
+          {min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur'}
+        ],
+        UUID: [
+          {required: true, message: '请输入', trigger: 'blur'},
+          {min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur'}
+        ],
+        byteFrom: [
+          {required: true, message: '请输入', trigger: 'blur'},
+          {min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur'}
+        ],
+        byteTo: [
+          {required: true, message: '请输入', trigger: 'blur'},
+          {min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur'}
+        ],
+        description: [
+          {required: true, message: '请输入描述信息', trigger: 'blur'},
+          {min: 1, max: 30, message: '长度在 1 到 30 个字符', trigger: 'blur'}
+        ]
+      },
+      deviceName: '',
+      conName: '',
+      dialogFormVisibleAdd: false,
+      dialogFormVisibleEdit: false,
+      intervalVariable : null
+    }
+  },
+  created () {
+    this.getParams();
+    this.selectAllFromDeviceVariable();
+    this.selectAllFromDevice(this.deviceName);
+  },
+  beforeDestroy(){
+    clearInterval(this.intervalVariable);
+  },
+  watch: {
+    '$route' (to, from) {
+      // 路由发生变化页面刷新
+      this.getParams();
+      if(this.id != undefined){
+        this.selectAllFromDeviceVariable();
+      }
+
+      if(this.deviceName != undefined){
+        this.selectAllFromDevice(this.deviceName);
+      }
+    }
+  },
+
+
+  methods: {
+    setInterval(){
+      if (this.intervalVariable) {
+        clearInterval(this.intervalVariable);
+        this.intervalVariable = null;
+        this.setInterval()
+      } else {
+        this.intervalVariable = setInterval(() => {
+          setTimeout(this.selectAllFromDeviceVariable,0);
+        }, 5000)
+      }
+    },
+
+    getParams(){
+               // 取到路由带过来的参数
+               this.deviceName = this.$route.query.name;
+               this.id = this.$route.query.id;
+               this.conName = this.$route.query.conName;
+             },
+
+    selectAllFromDevice(deviceName){
+      selectJsonUpdateJsonRpcJsonFromDeviceByDeviceName(deviceName).then(res=>{
+        if(res.data.result){
+          if(res.data.data.length>0){
+            this.ruleForm.textareaJsonUpdate = JSON.parse(JSON.stringify(res.data.data[0].updateJson)) ==null? '':JSON.parse(JSON.stringify(res.data.data[0].updateJson))+'' ;
+            this.ruleFormRpc.textareaJsonRpc = JSON.parse(JSON.stringify(res.data.data[0].rpcJson))==null? '':JSON.parse(JSON.stringify(res.data.data[0].rpcJson))+'';
+            this.ruleFormJson.name = this.conName;
+            this.ruleFormJson.MACAddress = JSON.parse(JSON.stringify(res.data.data[0].json))==null? '':JSON.parse(res.data.data[0].json).MACAddress+'';
+            this.ruleFormJson.addrType = JSON.parse(JSON.stringify(res.data.data[0].json))==null? '':JSON.parse(res.data.data[0].json).addrType+'';
+          }
+        }else{
+          this.$message({
+            type: 'error',
+            message: '查询失败!'
+          });
+        }
+      })
+    },
+
+    selectAllFromDeviceVariable(){
+      selectAllFromDeviceVariable(this.id,(this.tableData.currentPage-1)*this.tableData.pageSize,this.tableData.pageSize,this.tableData.sort,this.tableData.order).then(res=>{
+        this.tableData.rows = [];
+        this.tableData.total = null;
+        this.updateHeight();
+        clearInterval(this.intervalVariable);
+        if(res.data.result){
+          this.tableData.rows = res.data.data.data;
+          this.tableData.total =  res.data.data.count;
+          this.setInterval();
+        }
+      })
+    },
+
+
+    handleSizeChange: function (size) {
+      this.tableData.pageSize = size;
+      //this.handleCurrentChange(this.currentPage);
+      this.selectAllFromDevice();
+    },
+    handleCurrentChange: function (currentPage) {
+      this.tableData.currentPage = currentPage;
+      //this.currentChangePage(this.tableData,currentPage)
+      this.selectAllFromDevice();
+    },
+    //分页方法（重点）
+    currentChangePage(list,currentPage) {
+      let from = (currentPage - 1) * this.tableData.pageSize;
+      let to = currentPage * this.tableData.pageSize;
+      this.tempList = [];
+      for (; from < to; from++) {
+        if (list[from]) {
+          this.tempList.push(list[from]);
+        }
+      }
+    },
+    submitFormSave(ruleForm,ruleFormRpc){
+          this.$refs[ruleForm].validate((valid) => {
+            if (valid){
+              this.$refs[ruleFormRpc].validate((valid) => {
+                if (valid){
+                  this.$confirm('确定保存吗?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                  }).then(() => {
+                    let device = {};
+                    device.rpcJson = this.ruleFormRpc.textareaJsonRpc;
+                    device.updateJson = this.ruleForm.textareaJsonUpdate;
+                    device.json = this.ruleFormJson.textareaJson;
+                    device.device_name = this.deviceName;
+                    updateDeviceByDeviceName(device).then(res => {
+                      if (res.data.result) {
+                        this.$message({
+                          type: 'success',
+                          message: '保存成功!'
+                        });
+                        this.selectAllFromDevice(this.deviceName);
+                      } else {
+                        this.$message({
+                          type: 'error',
+                          message: '保存失败!'
+                        });
+                      }
+                    })
+                  })
+                }
+              })
+            }
+          })
+    },
+    submitFormSaveJson(ruleFormJson){
+      this.$refs[ruleFormJson].validate((valid) => {
+        if (valid) {
+          this.$confirm('确定保存吗?', '提示', {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }).then(() => {
+            let device = {};
+            device.json = '{"name":"' + this.conName+'",'
+            + '"MACAddress":"'+this.ruleFormJson.MACAddress+'",'
+            +  '"addrType":"'+this.ruleFormJson.addrType+
+              '"}'
+            device.device_name = this.deviceName;
+            updateDeviceByDeviceName(device).then(res => {
+              if (res.data.result) {
+                this.$message({
+                  type: 'success',
+                  message: '保存成功!'
+                });
+                this.selectAllFromDevice(this.deviceName);
+              } else {
+                this.$message({
+                  type: 'error',
+                  message: '保存失败!'
+                });
+              }
+            })
+          })
+        }
+      })
+    },
+
+    cancleFormAdd(bleFormAdd){
+      this.$refs[bleFormAdd].resetFields();
+      this.dialogFormVisibleAdd = false;
+    },
+
+    cancleFormEdit(bleFormEdit){
+      this.$refs[bleFormEdit].resetFields();
+      this.dialogFormVisibleEdit = false;
+    },
+
+    resetForm(ruleForm,ruleFormRpc) {
+      this.$refs[ruleForm].resetFields();
+      this.$refs[ruleFormRpc].resetFields();
+      this.ruleForm = {};
+      this.ruleFormRpc = {};
+    },
+    resetFormJson(ruleFormJson) {
+      this.$refs[ruleFormJson].resetFields();
+      this.ruleFormJson = {};
+    },
+    indexMethod(index) {
+      return (this.tableData.currentPage - 1) * this.tableData.pageSize + index + 1
+    },
+
+    submitBleFormAdd(bleFormAdd){
+      this.$refs[bleFormAdd].validate((valid) => {
+        if (valid)
+          this.$confirm('确定保存吗?', '提示', {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }).then(() => {
+            let deviceVariable = {};
+            deviceVariable.tag_category = this.bleFormAdd.tag_category;
+            deviceVariable.key_express = this.bleFormAdd.key;
+            deviceVariable.value_express = this.bleFormAdd.method;
+            deviceVariable.tag_name = this.bleFormAdd.UUID;
+            deviceVariable.tag_type = this.bleFormAdd.byteFrom;
+            deviceVariable.function_code = this.bleFormAdd.byteTo ;
+            deviceVariable.description = this.bleFormAdd.description;
+            deviceVariable.device_name = this.deviceName;
+            addDeviceVariable(deviceVariable).then(res=>{
+                if(res.data.result){
+                  this.$message({
+                    type: 'success',
+                    message: '添加成功!'
+                  });
+                  this.selectAllFromDeviceVariable(this.id,(this.tableData.currentPage-1)*this.tableData.pageSize,this.tableData.pageSize,this.tableData.sort,this.tableData.order);
+                  this.$refs[bleFormAdd].resetFields();
+                  this.dialogFormVisibleAdd = false;
+                }else{
+                  this.$message({
+                    type: 'error',
+                    message: '添加失败!'
+                  });
+                }
+            })
+          })
+      })
+    },
+
+    submitBleFormEdit(bleFormEdit){
+      this.$refs[bleFormEdit].validate((valid) => {
+        if (valid)
+          this.$confirm('确定编辑吗?', '提示', {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }).then(() => {
+            let ble = {};
+            ble.description = this.bleFormEdit.description;
+            ble.tag_category = this.bleFormEdit.tag_category;
+            ble.key_express = this.bleFormEdit.key;
+            ble.value_express = this.bleFormEdit.method;
+            ble.tag_name = this.bleFormEdit.UUID;
+            ble.tag_type = this.bleFormEdit.byteFrom;
+            ble.function_code = this.bleFormEdit.byteTo;
+            ble.id = this.bleFormEdit.id;
+            updateDeviceVariableById(ble).then(res=>{
+              if(res.data.result){
+                this.$message({
+                  type: 'success',
+                  message: '编辑成功!'
+                });
+                this.selectAllFromDeviceVariable(this.id,(this.tableData.currentPage-1)*this.tableData.pageSize,this.tableData.pageSize,this.tableData.sort,this.tableData.order);
+                this.dialogFormVisibleEdit = false;
+                this.$refs[bleFormEdit].resetFields();
+              }else{
+                this.$message({
+                  type: 'error',
+                  message: '编辑失败!'
+                });
+              }
+            })
+          })
+      })
+    },
+
+    handleEdit(index,row){
+      this.bleFormEdit.tag_category = row.tag_category;
+      this.bleFormEdit.key = row.key_express;
+      this.bleFormEdit.method = row.value_express;
+      this.bleFormEdit.description = row.description;
+      this.bleFormEdit.UUID = row.tag_name;
+      this.bleFormEdit.byteFrom = row.tag_type;
+      this.bleFormEdit.byteTo = row.function_code;
+      this.bleFormEdit.deviceName = this.deviceName;
+      this.bleFormEdit.id = row.id;
+      this.dialogFormVisibleEdit = true;
+    },
+    handleDelete(index,row){
+      this.$confirm('确定删除吗?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        deleteDeviceVariableById(row.id).then(res=>{
+          if(res.data.result){
+            this.$message({
+              type: 'success',
+              message: '删除成功!'
+            });
+            this.selectAllFromDeviceVariable(this.id,(this.tableData.currentPage-1)*this.tableData.pageSize,this.tableData.pageSize,this.tableData.sort,this.tableData.order);
+          }else{
+            this.$message({
+              type: 'error',
+              message: '删除失败!'
+            });
+          }
+        })
+      })
+    },
+    // 判断是否为json格式
+    isJSON(str) {
+      if (typeof str == 'string') {
+        try {
+          var obj = JSON.parse(str);
+          if (typeof obj == 'object' && obj) {
+            return true;
+          } else {
+            return false;
+          }
+
+        } catch (e) {
+          console.log('error：' + str + '!!!' + e);
+          return false;
+        }
+      }
+    },
+    addVariable(){
+        this.dialogFormVisibleAdd = true;
+        this.bleFormAdd.deviceName = this.deviceName;
+    },
+    // 更新表格高度
+    updateHeight() {
+      this.tableData.height =
+        window.innerHeight -
+          $(".paginationPanel").height() -
+          $(".toolPanel").height()-$(".basicCan").height()-$(".headName").height()-120;
+    },
+  }
+}
+</script>
+
+<style scoped>
+
+</style>

@@ -1,0 +1,807 @@
+<template>
+<div>
+  <el-row class="toolPanelT">
+    <div style="float: right">
+      <span style="font-size: medium">操作：</span>
+      <el-tooltip class="item" effect="dark" content="添加" placement="top-start">
+        <el-button type="success" size="mini" icon="el-icon-circle-plus" circle style="float: right" @click="addTopic"></el-button>
+      </el-tooltip>
+    </div>
+  </el-row>
+  <el-row>
+    <h2>设备名称： {{this.deviceName}}</h2>
+    <el-table
+      :data="tableDataTopic.rows"
+      :height="tableDataTopic.height"
+      stripe
+      border
+      style="width: 100%">
+      <el-table-column
+        type="index"
+        :index="indexMethodTopic"
+        width="50">
+      </el-table-column>
+      <el-table-column
+        prop="topicFilter"
+        label="主题"
+        width="150">
+      </el-table-column>
+      <el-table-column
+        prop="variableCategory"
+        label="变量类别">
+      </el-table-column>
+      <el-table-column
+        prop="type"
+        label="类型">
+      </el-table-column>
+      <el-table-column
+        prop="nameJsonExp"
+        label="设备名匹配">
+      </el-table-column>
+      <el-table-column
+        prop="typeJsonExp"
+        label="设备类型匹配"
+        width="150">
+      </el-table-column>
+      <el-table-column
+        prop="timeout"
+        label="超时时间">
+      </el-table-column>
+      <el-table-column label="操作">
+        <template slot-scope="scope">
+          <el-tooltip class="item" effect="dark" content="编辑" placement="top-start">
+            <el-button type="primary" icon="el-icon-edit" size="mini" @click="handleEditTopic(scope.$index, scope.row)" circle></el-button>
+          </el-tooltip>
+          <el-tooltip class="item" effect="dark" content="删除" placement="top-start">
+            <el-button type="danger" icon="el-icon-delete" size="mini" @click="handleDeleteTopic(scope.$index, scope.row)" circle></el-button>
+          </el-tooltip>
+        </template>
+      </el-table-column>
+    </el-table>
+  </el-row>
+  <el-row class="paginationPanelT">
+    <el-pagination
+      background
+      @size-change="handleSizeChangeTopic"
+      @current-change="handleCurrentChangeTopic" :current-page="this.tableDataTopic.currentPage"
+      :page-sizes="[10, 20, 50, 100]"
+      :page-size="this.tableDataTopic.pageSize"
+      layout="total,sizes, prev, pager,next,jumper"
+      :total="this.tableDataTopic.total">
+    </el-pagination>
+  </el-row>
+  <el-row class="toolPanel">
+    <div style="float: right">
+      <span style="font-size: medium">操作：</span>
+      <el-tooltip class="item" effect="dark" content="添加" placement="top-start">
+        <el-button type="success" size="mini" icon="el-icon-circle-plus" circle style="float: right" @click="addVariable"></el-button>
+      </el-tooltip>
+    </div>
+  </el-row>
+  <el-row>
+    <div class="headName">
+      <h3>变量列表(Mqtt配置)</h3>
+      <span>&nbsp;</span>
+    </div>
+    <el-table
+      :data="tableData.rows"
+      :height="tableData.height"
+      stripe
+      border
+      style="width: 100%">
+      <el-table-column
+        type="index"
+        :index="indexMethod"
+        width="50">
+      </el-table-column>
+      <el-table-column
+        prop="device_name"
+        label="设备名称"
+        width="150">
+      </el-table-column>
+      <el-table-column
+        prop="topic"
+        label="主题"
+        width="150">
+      </el-table-column>
+      <el-table-column
+        prop="tag_category"
+        label="变量类别"
+        width="150">
+      </el-table-column>
+      <el-table-column
+        prop="tag_type"
+        label="数据类型">
+      </el-table-column>
+      <el-table-column
+        prop="key_express"
+        label="变量名表达式">
+      </el-table-column>
+      <el-table-column
+        prop="value_express"
+        label="变量值表达式"
+        width="150">
+      </el-table-column>
+      <el-table-column
+        prop="value"
+        label="值">
+      </el-table-column>
+      <el-table-column
+        prop="description"
+        label="描述">
+      </el-table-column>
+      <el-table-column label="操作">
+        <template slot-scope="scope">
+          <el-tooltip class="item" effect="dark" content="编辑" placement="top-start">
+            <el-button type="primary" icon="el-icon-edit" size="mini" @click="handleEdit(scope.$index, scope.row)" circle></el-button>
+          </el-tooltip>
+          <el-tooltip class="item" effect="dark" content="删除" placement="top-start">
+            <el-button type="danger" icon="el-icon-delete" size="mini" @click="handleDelete(scope.$index, scope.row)" circle></el-button>
+          </el-tooltip>
+        </template>
+      </el-table-column>
+    </el-table>
+  </el-row>
+  <el-row class="paginationPanel">
+    <el-pagination
+      background
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange" :current-page="this.tableData.currentPage"
+      :page-sizes="[10, 20, 50, 100]"
+      :page-size="this.tableData.pageSize"
+      layout="total,sizes, prev, pager,next,jumper"
+      :total="this.tableData.total">
+    </el-pagination>
+  </el-row>
+  <el-dialog title="添加主题"  :close-on-click-modal="false" :visible.sync="dialogFormVisibleAddTopic">
+    <el-form :model="topicFormAdd" style="margin-left: 27%" :rules="topicRulesAdd" ref="topicFormAdd" size="mini" label-width="130px" class="demo-ruleForm">
+      <el-form-item label="主题：" prop="topicFilter" style="width: 60%">
+        <el-input v-model="topicFormAdd.topicFilter" style="width: auto"></el-input>
+      </el-form-item>
+      <el-form-item label="type：" prop="type" style="width: 60%">
+        <el-input v-model="topicFormAdd.type" style="width: auto"></el-input>
+      </el-form-item>
+      <el-form-item label="设备名匹配：" prop="nameJsonExp" style="width: 60%">
+        <el-input v-model="topicFormAdd.nameJsonExp" style="width: auto"></el-input>
+      </el-form-item>
+      <el-form-item label="设备类型匹配：" prop="typeJsonExp" style="width: 60%">
+        <el-input v-model="topicFormAdd.typeJsonExp" style="width: auto"></el-input>
+      </el-form-item>
+      <el-form-item label="超时设置：" prop="timeout" style="width: 60%">
+        <el-input v-model="topicFormAdd.timeout" style="width: auto"></el-input>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" @click="submitMqttFormAddTopic('topicFormAdd')">确定</el-button>
+        <el-button @click="cancleFormAddTopic('topicFormAdd')">取消</el-button>
+      </el-form-item>
+    </el-form>
+  </el-dialog>
+  <el-dialog title="编辑主题"  :close-on-click-modal="false" :visible.sync="dialogFormVisibleEditTopic">
+    <el-form :model="topicFormEdit" style="margin-left: 27%" :rules="topicRulesEdit" ref="topicFormEdit" size="mini" label-width="130px" class="demo-ruleForm">
+      <el-form-item label="主题：" prop="topicFilter" style="width: 60%">
+        <el-input disabled v-model="topicFormEdit.topicFilter" style="width: auto"></el-input>
+      </el-form-item>
+      <el-form-item label="type：" prop="type" style="width: 60%">
+        <el-input v-model="topicFormEdit.type" style="width: auto"></el-input>
+      </el-form-item>
+      <el-form-item label="设备名匹配：" prop="nameJsonExp" style="width: 60%">
+        <el-input v-model="topicFormEdit.nameJsonExp" style="width: auto"></el-input>
+      </el-form-item>
+      <el-form-item label="设备类型匹配：" prop="typeJsonExp" style="width: 60%">
+        <el-input v-model="topicFormEdit.typeJsonExp" style="width: auto"></el-input>
+      </el-form-item>
+      <el-form-item label="超时设置：" prop="timeout" style="width: 60%">
+        <el-input v-model="topicFormEdit.timeout" style="width: auto"></el-input>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" @click="submitMqttFormEditTopic('topicFormEdit')">确定</el-button>
+        <el-button @click="cancleFormEditTopic('topicFormEdit')">取消</el-button>
+      </el-form-item>
+    </el-form>
+  </el-dialog>
+
+  <el-dialog title="添加mqtt变量"  :close-on-click-modal="false" :visible.sync="dialogFormVisibleAdd">
+    <el-form :model="mqttFormAdd" style="margin-left: 27%" :rules="mqttRulesAdd" ref="mqttFormAdd" size="mini" label-width="130px" class="demo-ruleForm">
+      <el-form-item label="设备名称：" prop="deviceName" style="width: 60%">
+        <el-input v-model="mqttFormAdd.deviceName" disabled style="width: auto"></el-input>
+      </el-form-item>
+      <el-form-item label="主题：" prop="topic" style="width: 60%">
+        <el-select v-model="mqttFormAdd.topic">
+          <el-option
+            v-for="item in topicArr"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value">
+          </el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="变量类别：" prop="tag_category" style="width: 60%">
+        <el-select v-model="mqttFormAdd.tag_category">
+          <el-option label="attributes" value="attributes"></el-option>
+          <el-option label="timeseries" value="timeseries"></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="描述：" prop="description" style="width: 60%">
+        <el-input
+          type="textarea"
+          placeholder="请输入内容"
+          v-model="mqttFormAdd.description"
+          maxlength="30"
+          show-word-limit
+        >
+        </el-input>
+      </el-form-item>
+      <el-form-item label="变量类型：" prop="tag_type" style="width: 60%">
+        <el-input v-model="mqttFormAdd.tag_type" style="width: auto"></el-input>
+      </el-form-item>
+      <el-form-item label="变量名表达式：" prop="key_express" style="width: 60%">
+        <el-input v-model="mqttFormAdd.key_express" style="width: auto"></el-input>
+      </el-form-item>
+      <el-form-item label="变量值表达式：" prop="value_express" style="width: 60%">
+        <el-input v-model="mqttFormAdd.value_express" style="width: auto"></el-input>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" @click="submitMqttFormAdd('mqttFormAdd')">确定</el-button>
+        <el-button @click="cancleFormAdd('mqttFormAdd')">取消</el-button>
+      </el-form-item>
+    </el-form>
+  </el-dialog>
+  <el-dialog title="编辑mqtt变量"  :close-on-click-modal="false" :visible.sync="dialogFormVisibleEdit">
+    <el-form :model="mqttFormEdit" style="margin-left: 27%" :rules="mqttRulesEdit" ref="mqttFormEdit" size="mini" label-width="130px" class="demo-ruleForm">
+      <el-form-item label="设备名称：" prop="device_name" style="width: 60%">
+        <el-input v-model="mqttFormEdit.device_name" disabled style="width: auto"></el-input>
+      </el-form-item>
+      <el-form-item label="主题：" prop="topic" style="width: 60%">
+        <el-select v-model="mqttFormEdit.topic">
+          <el-option
+            v-for="item in topicArr"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value">
+          </el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="变量类别：" prop="tag_category" style="width: 60%">
+        <el-select disabled v-model="mqttFormEdit.tag_category">
+          <el-option label="attributes" value="attributes"></el-option>
+          <el-option label="timeseries" value="timeseries"></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="描述：" prop="description" style="width: 60%">
+        <el-input
+          type="textarea"
+          placeholder="请输入内容"
+          v-model="mqttFormEdit.description"
+          maxlength="30"
+          show-word-limit
+        >
+        </el-input>
+      </el-form-item>
+      <el-form-item label="变量类型：" prop="tag_type" style="width: 60%">
+        <el-input v-model="mqttFormEdit.tag_type" style="width: auto"></el-input>
+      </el-form-item>
+      <el-form-item label="变量名表达式：" prop="key_express" style="width: 60%">
+        <el-input v-model="mqttFormEdit.key_express" style="width: auto"></el-input>
+      </el-form-item>
+      <el-form-item label="变量值表达式：" prop="value_express" style="width: 60%">
+        <el-input v-model="mqttFormEdit.value_express" style="width: auto"></el-input>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" @click="submitMqttFormEdit('mqttFormEdit')">确定</el-button>
+        <el-button @click="cancleFormEdit('mqttFormEdit')">取消</el-button>
+      </el-form-item>
+    </el-form>
+  </el-dialog>
+</div>
+</template>
+
+<script>
+import {
+  addDeviceVariable,
+  deleteDeviceVariableById,
+  selectAllFromDeviceVariable,
+  updateDeviceVariableById
+} from "../../../api/deviceVariable";
+import {addTopic, deleteFromTopicByTopicName, selectAllFromTopic, updateTopicByTopicName} from "../../../api/topic";
+import $ from "jquery";
+
+export default {
+  name: "mqttVariableList",
+  data() {
+    return {
+      tableData: {
+        height: 190,
+        sort: "",
+        order: "",
+        page: 1,
+        rows: [],
+        currentPage: 1,
+        pageSize: 10,
+        total: null,
+      },
+      mqttFormAdd: {
+        deviceName: '',
+        tag_category: '',
+        description: '',
+        tag_type: '',
+        topic: '',
+        value_express: '',
+        key_express: ''
+      },
+      mqttFormEdit: {
+        device_name: '',
+        tag_category: '',
+        description: '',
+        tag_type: '',
+        topic: '',
+        value_express: '',
+        key_express: ''
+      },
+      topicFormAdd: {
+        topicFilter: '',
+        type: '',
+        nameJsonExp: '',
+        typeJsonExp: '',
+        timeout: ''
+      },
+      topicFormEdit: {
+        topicFilter: '',
+        type: '',
+        nameJsonExp: '',
+        typeJsonExp: '',
+        timeout: ''
+      },
+
+      tableDataTopic: {
+        height: 190,
+        sort: "",
+        order: "",
+        page: 1,
+        rows: [],
+        currentPage: 1,
+        pageSize: 10,
+        total: null,
+      },
+      topicRulesAdd: {
+        topicFilter: [
+          {required: true, message: '请输入主题', trigger: 'blur'},
+          {min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur'}
+        ],
+        type: [
+          {required: true, message: '请输入类型', trigger: 'blur'},
+          {min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur'}
+        ],
+        nameJsonExp: [
+          {required: true, message: '请输入设备名', trigger: 'blur'},
+          {min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur'}
+        ],
+        typeJsonExp: [
+          {required: true, message: '请输入设备类型', trigger: 'blur'},
+          {min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur'}
+        ],
+        timeout: [
+          {required: true, message: '请输入超时时间', trigger: 'blur'},
+          {min: 1, max: 10, message: '长度在 1 到 10 个字符', trigger: 'blur'}
+        ]
+      },
+      topicRulesEdit: {
+        topicFilter: [
+          {required: true, message: '请输入主题', trigger: 'blur'},
+          {min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur'}
+        ],
+        type: [
+          {required: true, message: '请输入类型', trigger: 'blur'},
+          {min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur'}
+        ],
+        nameJsonExp: [
+          {required: true, message: '请输入设备名', trigger: 'blur'},
+          {min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur'}
+        ],
+        typeJsonExp: [
+          {required: true, message: '请输入设备类型', trigger: 'blur'},
+          {min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur'}
+        ],
+        timeout: [
+          {required: true, message: '请输入超时时间', trigger: 'blur'},
+          {min: 1, max: 10, message: '长度在 1 到 10 个字符', trigger: 'blur'}
+        ]
+      },
+      mqttRulesAdd: {
+        topic: [
+          { required: true, message: '请选择主题', trigger: 'change' }
+        ],
+        tag_category: [
+          { required: true, message: '请选择变量类别', trigger: 'change' }
+        ],
+        tag_type: [
+          {required: true, message: '请输入变量类型', trigger: 'blur'},
+          {min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur'}
+        ],
+        key_express: [
+          {required: true, message: '请输入变量名表达式', trigger: 'blur'},
+          {min: 1, max: 500, message: '长度在 1 到 500 个字符', trigger: 'blur'}
+        ],
+        value_express: [
+          {required: true, message: '请输入变量值表达式', trigger: 'blur'},
+          {min: 1, max: 500, message: '长度在 1 到 500 个字符', trigger: 'blur'}
+        ],
+        description: [
+          {required: true, message: '请输入描述信息', trigger: 'blur'},
+          {min: 1, max: 30, message: '长度在 1 到 30 个字符', trigger: 'blur'}
+        ]
+      },
+      mqttRulesEdit: {
+        topic: [
+          { required: true, message: '请选择主题', trigger: 'change' }
+        ],
+        tag_category: [
+          { required: true, message: '请选择变量类别', trigger: 'change' }
+        ],
+        tag_type: [
+          {required: true, message: '请输入变量类型', trigger: 'blur'},
+          {min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur'}
+        ],
+        key_express: [
+          {required: true, message: '请输入变量名表达式', trigger: 'blur'},
+          {min: 1, max: 500, message: '长度在 1 到 500 个字符', trigger: 'blur'}
+        ],
+        value_express: [
+          {required: true, message: '请输入变量值表达式', trigger: 'blur'},
+          {min: 1, max: 500, message: '长度在 1 到 500 个字符', trigger: 'blur'}
+        ],
+        description: [
+          {required: true, message: '请输入描述信息', trigger: 'blur'},
+          {min: 1, max: 30, message: '长度在 1 到 30 个字符', trigger: 'blur'}
+        ]
+      },
+      deviceName: '',
+      dialogFormVisibleAdd: false,
+      dialogFormVisibleEdit: false,
+      dialogFormVisibleAddTopic: false,
+      dialogFormVisibleEditTopic: false,
+      topicArr:[],
+      topicMap: new Map(),
+      id: '',
+      editId:''
+    }
+  },
+  created () {
+    this.getParams();
+    this.selectAllFromDeviceVariable(this.id,(this.tableData.currentPage-1)*this.tableData.pageSize,this.tableData.pageSize,this.tableData.sort,this.tableData.order);
+    this.selectAllToipic((this.tableDataTopic.currentPage-1)*this.tableDataTopic.pageSize,this.tableDataTopic.pageSize,this.tableDataTopic.sort,this.tableDataTopic.order);
+  },
+  watch: {
+    '$route' (to, from) {
+      // 路由发生变化页面刷新
+      this.getParams();
+      if(this.id != undefined){
+        this.selectAllFromDeviceVariable(this.id,(this.tableData.currentPage-1)*this.tableData.pageSize,this.tableData.pageSize,this.tableData.sort,this.tableData.order);
+      }
+      this.selectAllToipic((this.tableDataTopic.currentPage-1)*this.tableDataTopic.pageSize,this.tableDataTopic.pageSize,this.tableDataTopic.sort,this.tableDataTopic.order);
+    }
+  },
+  methods:{
+    getParams(){
+      // 取到路由带过来的参数
+      this.deviceName = this.$route.query.name;
+      this.id = this.$route.query.id;
+    },
+    selectAllToipic(sqlStartIndex, sqlNumber, sortField, sortType){
+      this.tableDataTopic.rows = [];
+      this.tableDataTopic.total = null;
+      selectAllFromTopic(sqlStartIndex, sqlNumber, sortField, sortType).then(res=>{
+       // this.updateHeightTopic();
+        if(res.data.result){
+          this.tableDataTopic.rows = res.data.data.data;
+          this.tableDataTopic.total =  res.data.data.count;
+          let topicList = res.data.data.topicList;
+          for(let i=0;i<topicList.length;i++){
+            this.topicArr.push({value:topicList[i]})
+            this.topicMap.set(topicList[i],1);
+          }
+        }
+      })
+    },
+    selectAllFromDeviceVariable(id,sqlStartIndex, sqlNumber, sortField, sortType){
+      selectAllFromDeviceVariable(id,sqlStartIndex, sqlNumber, sortField, sortType).then(res=>{
+        this.tableData.rows = [];
+        this.tableData.total = [];
+        //this.updateHeight();
+        if(res.data.result){
+          this.tableData.rows = res.data.data.data;
+          this.tableData.total =  res.data.data.count;
+        }
+      })
+    },
+
+    handleEditTopic(index,row){
+      this.topicFormEdit.topicFilter = row.topicFilter;
+      this.topicFormEdit.type = row.type;
+      this.topicFormEdit.nameJsonExp = row.nameJsonExp;
+      this.topicFormEdit.typeJsonExp = row.typeJsonExp;
+      this.topicFormEdit.timeout = row.timeout;
+      this.dialogFormVisibleEditTopic = true;
+    },
+    handleEdit(index,row){
+      this.mqttFormEdit.tag_category = row.tag_category+'';
+      this.mqttFormEdit.description = row.description;
+      this.mqttFormEdit.tag_type = row.tag_type;
+      this.mqttFormEdit.topic = row.topic;
+      this.mqttFormEdit.value_express = row.value_express;
+      this.mqttFormEdit.key_express = row.key_express;
+      this.mqttFormEdit.device_name = this.deviceName;
+      this.editId = row.id;
+      this.dialogFormVisibleEdit = true;
+    },
+
+    submitMqttFormEdit(mqttFormEdit){
+      this.$refs[mqttFormEdit].validate((valid) => {
+        if (valid)
+          this.$confirm('确定编辑吗?', '提示', {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }).then(() => {
+            this.mqttFormEdit.id = this.editId;
+            updateDeviceVariableById(this.mqttFormEdit).then(res=>{
+              if(res.data.result){
+                this.$message({
+                  type: 'success',
+                  message: '编辑成功!'
+                });
+                this.selectAllFromDeviceVariable(this.id,(this.tableData.currentPage-1)*this.tableData.pageSize,this.tableData.pageSize,this.tableData.sort,this.tableData.order);
+                this.dialogFormVisibleEdit = false;
+                this.$refs[mqttFormEdit].resetFields();
+              }else{
+                this.$message({
+                  type: 'error',
+                  message: '编辑失败!'
+                });
+              }
+            })
+          })
+      })
+    },
+
+    handleDeleteTopic(index,row){
+      this.$confirm('确定删除吗?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        deleteFromTopicByTopicName(row.topicFilter).then(res=>{
+          if(res.data.result){
+            this.$message({
+              type: 'success',
+              message: '删除成功!'
+            });
+            this.selectAllToipic((this.tableDataTopic.currentPage-1)*this.tableDataTopic.pageSize,this.tableDataTopic.pageSize,this.tableDataTopic.sort,this.tableDataTopic.order);
+          }else{
+            this.$message({
+              type: 'error',
+              message: '删除失败!'
+            });
+          }
+        })
+      })
+    },
+    handleDelete(index,row){
+      this.$confirm('确定删除吗?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        deleteDeviceVariableById(row.id).then(res=>{
+          if(res.data.result){
+            this.$message({
+              type: 'success',
+              message: '删除成功!'
+            });
+            this.selectAllFromDeviceVariable(this.id,(this.tableData.currentPage-1)*this.tableData.pageSize,this.tableData.pageSize,this.tableData.sort,this.tableData.order);
+          }else{
+            this.$message({
+              type: 'error',
+              message: '删除失败!'
+            });
+          }
+        })
+      })
+    },
+    addVariable(){
+      this.dialogFormVisibleAdd = true;
+      this.mqttFormAdd.deviceName = this.deviceName;
+    },
+    addTopic(){
+      this.dialogFormVisibleAddTopic = true;
+      this.mqttFormAdd.deviceName = this.deviceName;
+    },
+
+    submitMqttFormAddTopic(topicFormAdd){
+      this.$refs[topicFormAdd].validate((valid) => {
+        if (valid)
+          this.$confirm('确定添加吗?', '提示', {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }).then(() => {
+            let topic = this.topicFormAdd.topicFilter;
+            let topicMap = this.topicMap;
+            if(topicMap.get(topic) != null){
+              this.$message({
+                type: 'warning',
+                message: '主题已存在，请重新输入!'
+              });
+            }else{
+              addTopic(this.topicFormAdd).then(res=>{
+                if(res.data.result){
+                  this.$message({
+                    type: 'success',
+                    message: '添加成功!'
+                  });
+                  this.selectAllToipic((this.tableDataTopic.currentPage-1)*this.tableDataTopic.pageSize,this.tableDataTopic.pageSize,this.tableDataTopic.sort,this.tableDataTopic.order);
+                  this.dialogFormVisibleAddTopic = false;
+                  this.$refs[topicFormAdd].resetFields();
+                }else{
+                  this.$message({
+                    type: 'error',
+                    message: '添加失败!'
+                  });
+                }
+              })
+            }
+          })
+      })
+    },
+
+    submitMqttFormEditTopic(topicFormEdit){
+      this.$refs[topicFormEdit].validate((valid) => {
+        if (valid)
+          this.$confirm('确定编辑吗?', '提示', {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }).then(() => {
+              updateTopicByTopicName(this.topicFormEdit).then(res=>{
+                if(res.data.result){
+                  this.$message({
+                    type: 'success',
+                    message: '编辑成功!'
+                  });
+                  this.selectAllToipic((this.tableDataTopic.currentPage-1)*this.tableDataTopic.pageSize,this.tableDataTopic.pageSize,this.tableDataTopic.sort,this.tableDataTopic.order);
+                  this.dialogFormVisibleEditTopic = false;
+                  this.$refs[topicFormEdit].resetFields();
+                }else{
+                  this.$message({
+                    type: 'error',
+                    message: '编辑失败!'
+                  });
+                }
+              })
+          })
+      })
+    },
+
+    submitMqttFormAdd(mqttFormAdd){
+      this.$refs[mqttFormAdd].validate((valid) => {
+        if (valid)
+          this.$confirm('确定添加吗?', '提示', {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }).then(() => {
+            let deviceVariable = {};
+            deviceVariable.tag_category = this.mqttFormAdd.tag_category;
+            deviceVariable.tag_type = this.mqttFormAdd.tag_type;
+            deviceVariable.key_express = this.mqttFormAdd.key_express;
+            deviceVariable.value_express = this.mqttFormAdd.value_express;
+            deviceVariable.description = this.mqttFormAdd.description;
+            deviceVariable.topic = this.mqttFormAdd.topic;
+            deviceVariable.device_name = this.deviceName;
+            addDeviceVariable(deviceVariable).then(res=>{
+              if(res.data.result){
+                this.$message({
+                  type: 'success',
+                  message: '添加成功!'
+                });
+                this.selectAllFromDeviceVariable(this.id,(this.tableData.currentPage-1)*this.tableData.pageSize,this.tableData.pageSize,this.tableData.sort,this.tableData.order);
+                this.dialogFormVisibleAdd = false;
+                this.$refs[mqttFormAdd].resetFields();
+              }else{
+                this.$message({
+                  type: 'error',
+                  message: '添加失败!'
+                });
+              }
+            })
+          })
+      })
+    },
+
+
+    cancleFormAddTopic(topicFormAdd){
+      this.$refs[topicFormAdd].resetFields();
+      this.dialogFormVisibleAddTopic = false;
+    },
+
+    cancleFormEditTopic(topicFormEdit){
+      this.$refs[topicFormEdit].resetFields();
+      this.dialogFormVisibleEditTopic = false;
+    },
+    cancleFormAdd(mqttFormAdd){
+      this.$refs[mqttFormAdd].resetFields();
+      this.dialogFormVisibleAdd = false;
+    },
+    cancleFormEdit(mqttFormEdit){
+      this.$refs[mqttFormEdit].resetFields();
+      this.dialogFormVisibleEdit = false;
+    },
+
+    indexMethod(index) {
+      return (this.tableData.currentPage - 1) * this.tableData.pageSize + index + 1
+    },
+    indexMethodTopic(index) {
+      return (this.tableData.currentPage - 1) * this.tableData.pageSize + index + 1
+    },
+    handleSizeChange: function (size) {
+      this.tableData.pageSize = size;
+      //this.handleCurrentChange(this.currentPage);
+      this.selectAllFromDevice();
+    },
+    handleCurrentChange: function (currentPage) {
+      this.tableData.currentPage = currentPage;
+      //this.currentChangePage(this.tableData,currentPage)
+      this.selectAllFromDevice();
+    },
+    //分页方法（重点）
+    currentChangePage(list,currentPage) {
+      let from = (currentPage - 1) * this.tableData.pageSize;
+      let to = currentPage * this.tableData.pageSize;
+      this.tempList = [];
+      for (; from < to; from++) {
+        if (list[from]) {
+          this.tempList.push(list[from]);
+        }
+      }
+    },
+    handleSizeChangeTopic: function (size) {
+      this.tableData.pageSize = size;
+      //this.handleCurrentChange(this.currentPage);
+      this.selectAllFromDevice();
+    },
+    handleCurrentChangeTopic: function (currentPage) {
+      this.tableData.currentPage = currentPage;
+      //this.currentChangePage(this.tableData,currentPage)
+      this.selectAllFromDevice();
+    },
+    //分页方法（重点）
+    currentChangePageTopic(list,currentPage) {
+      let from = (currentPage - 1) * this.tableData.pageSize;
+      let to = currentPage * this.tableData.pageSize;
+      this.tempList = [];
+      for (; from < to; from++) {
+        if (list[from]) {
+          this.tempList.push(list[from]);
+        }
+      }
+    },
+    // 更新表格高度
+    updateHeight() {
+      this.tableData.height =
+        (window.innerHeight -
+        $(".paginationPanel").height() -
+        $(".toolPanel").height()-$(".paginationPanelT").height()-$(".headName")-$(".toolPanelT").height())/2;
+    },
+    // 更新表格高度
+    updateHeightTopic() {
+      this.tableDataTopic.height =(window.innerHeight -
+        $(".paginationPanel").height() -
+        $(".toolPanel").height()-$(".paginationPanelT").height()-$(".headName")-$(".toolPanelT").height())/2;
+    },
+
+  }
+}
+</script>
+
+<style scoped>
+
+</style>

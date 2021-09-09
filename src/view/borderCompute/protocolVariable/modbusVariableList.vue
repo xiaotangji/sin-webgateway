@@ -1,0 +1,706 @@
+<template>
+  <div style="height: 80%">
+    <el-row class="basicCan">
+      <h2>设备名称： {{this.deviceName}}</h2>
+      <h3>基础参数</h3>
+      <el-col :span="12"><div class="grid-content bg-purple"></div>
+        <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="100px" class="demo-ruleForm">
+          <el-row>
+            <el-col :span="10"><div class="grid-content bg-purple"></div>
+              <el-form-item label="unitId:" prop="unitId">
+                <el-input style="width: 133%;margin-left: 25%" disabled  v-model="ruleForm.unitId"></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8" style="margin-left: 20%"><div class="grid-content bg-purple-light"></div>
+              <el-form-item label="sendDataOnlyOnChange:" prop="sendDataOnlyOnChange">
+                <el-select style="margin-left: 75%;width: 213px" v-model="ruleForm.sendDataOnlyOnChange">
+                  <el-option label="true" value="true"></el-option>
+                  <el-option label="false" value="false"></el-option>
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row>
+            <el-col :span="10"><div class="grid-content bg-purple"></div>
+              <el-form-item label="deviceName:" prop="deviceName">
+                <el-input style="width: 133%;margin-left: 25%" disabled placeholder="例如：Test"  v-model="ruleForm.deviceName"></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8" style="margin-left: 20%"><div class="grid-content bg-purple-light"></div>
+              <el-form-item label="connectAttemptTimeMs:" prop="connectAttemptTimeMs">
+                <el-input  style="width: 197%;margin-left: 75%"clearable placeholder="例如：5000" v-model="ruleForm.connectAttemptTimeMs"></el-input>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row>
+            <el-col :span="10"><div class="grid-content bg-purple"></div>
+              <el-form-item label="attributesPollPeriod:" prop="attributesPollPeriod">
+                <el-input style="width: 133%;margin-left: 25%" clearable placeholder="例如：5000" v-model="ruleForm.attributesPollPeriod"></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8" style="margin-left: 20%"><div class="grid-content bg-purple-light"></div>
+              <el-form-item label="connectAttemptCount:" prop="connectAttemptCount">
+                <el-input  style="width: 197%;margin-left: 75%" clearable placeholder="例如：5" v-model="ruleForm.connectAttemptCount"></el-input>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row>
+            <el-col :span="10"><div class="grid-content bg-purple"></div>
+              <el-form-item label="timeseriesPollPeriod:" prop="timeseriesPollPeriod">
+                <el-input style="width: 133%;margin-left: 25%" clearable placeholder="例如：5000" v-model="ruleForm.timeseriesPollPeriod"></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8" style="margin-left: 20%"><div class="grid-content bg-purple-light"></div>
+              <el-form-item label="waitAfterFailedAttemptsMs:" prop="waitAfterFailedAttemptsMs">
+                <el-input  style="width: 197%;margin-left: 75%" clearable placeholder="例如：300000"v-model="ruleForm.waitAfterFailedAttemptsMs"></el-input>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <div style="text-align: right">
+            <el-button type="primary" @click="submitFormAdd('ruleForm')">保存</el-button>
+            <el-button @click="resetForm('ruleForm')">重置</el-button>
+          </div>
+        </el-form>
+      </el-col>
+    </el-row>
+    <el-row class="toolPanel">
+      <div style="float: right">
+        <span style="font-size: medium">操作：</span>
+        <el-tooltip class="item" effect="dark" content="添加" placement="top-start">
+          <el-button type="success" size="mini" icon="el-icon-circle-plus" circle style="float: right" @click="addVariable"></el-button>
+        </el-tooltip>
+      </div>
+    </el-row>
+    <el-row>
+      <div class="headName">
+      <h3>变量列表(Modbus配置)</h3>
+      <span>&nbsp;</span>
+      </div>
+      <el-table
+        :data="tableData.rows"
+        stripe
+        border
+        style="width: 100%">
+        <el-table-column
+          type="index"
+          :index="indexMethod"
+          width="50">
+        </el-table-column>
+        <el-table-column
+          prop="device_name"
+          label="设备名称"
+          width="150">
+        </el-table-column>
+        <el-table-column
+          prop="tag_category"
+          label="变量类别"
+          width="150">
+        </el-table-column>
+        <el-table-column
+          prop="tag_name"
+          label="变量名"
+          width="150">
+        </el-table-column>
+        <el-table-column
+          prop="tag_type"
+          label="数据类型">
+        </el-table-column>
+        <el-table-column
+          prop="function_code"
+          label="功能码">
+        </el-table-column>
+        <el-table-column
+          prop="count"
+          label="长度"
+          width="150">
+        </el-table-column>
+        <el-table-column
+          prop="address"
+          label="地址">
+        </el-table-column>
+        <el-table-column
+          prop="value"
+          label="值">
+        </el-table-column>
+        <el-table-column
+          prop="description"
+          label="描述">
+        </el-table-column>
+        <el-table-column label="操作">
+          <template slot-scope="scope">
+            <el-tooltip class="item" effect="dark" content="编辑" placement="top-start">
+              <el-button type="primary" icon="el-icon-edit" size="mini" @click="handleEdit(scope.$index, scope.row)" circle></el-button>
+            </el-tooltip>
+            <el-tooltip class="item" effect="dark" content="删除" placement="top-start">
+              <el-button type="danger" icon="el-icon-delete" size="mini" @click="handleDelete(scope.$index, scope.row)" circle></el-button>
+            </el-tooltip>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-row>
+    <el-row class="paginationPanel">
+      <el-pagination
+        background
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange" :current-page="this.tableData.currentPage"
+        :page-sizes="[10, 20, 50, 100]"
+        :page-size="this.tableData.pageSize"
+        layout="total,sizes, prev, pager,next,jumper"
+        :total="this.tableData.total">
+      </el-pagination>
+    </el-row>
+    <el-dialog title="添加modbus变量"  :close-on-click-modal="false" :visible.sync="dialogFormVisibleAdd">
+      <el-form :model="modbusFormAdd" style="margin-left: 27%" :rules="modbusRulesAdd" ref="modbusFormAdd" size="mini" label-width="130px" class="demo-ruleForm">
+        <el-form-item label="设备名称：" prop="deviceName" style="width: 60%">
+          <el-input v-model="modbusFormAdd.deviceName" disabled style="width: auto"></el-input>
+        </el-form-item>
+        <el-form-item label="变量类别：" prop="tag_category" style="width: 60%">
+          <el-select v-model="modbusFormAdd.tag_category">
+            <el-option label="attributes" value="attributes"></el-option>
+            <el-option label="timeseries" value="timeseries"></el-option>
+            <el-option label="attributeUpdates" value="attributeUpdates"></el-option>
+            <el-option label="rpc" value="rpc"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="变量名：" prop="tag_name" style="width: 60%">
+          <el-input v-model="modbusFormAdd.tag_name" style="width: auto"></el-input>
+        </el-form-item>
+        <el-form-item label="描述：" prop="description" style="width: 60%">
+          <el-input
+            type="textarea"
+            placeholder="请输入内容"
+            v-model="modbusFormAdd.description"
+            maxlength="30"
+            show-word-limit
+          >
+          </el-input>
+        </el-form-item>
+        <el-form-item label="数据类型：" prop="tag_type" style="width: 60%">
+          <el-select v-model="modbusFormAdd.tag_type">
+            <el-option label="string" value="string"></el-option>
+            <el-option label="bits" value="bits"></el-option>
+            <el-option label="8int" value="8int"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="功能码：" prop="function_code" style="width: 60%">
+          <el-input v-model="modbusFormAdd.function_code" style="width: auto"></el-input>
+        </el-form-item>
+        <el-form-item label="长度：" prop="count" style="width: 60%">
+          <el-input v-model="modbusFormAdd.count" style="width: auto"></el-input>
+        </el-form-item>
+        <el-form-item label="地址：" prop="address" style="width: 60%">
+          <el-input v-model="modbusFormAdd.address" style="width: auto"></el-input>
+        </el-form-item>
+        <el-form-item label="数据计算：" prop="data_calculation" style="width: 60%">
+          <el-select v-model="modbusFormAdd.data_calculation">
+            <el-option label="multiplier" value="multiplier"></el-option>
+            <el-option label="Divisor" value="Divisor"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="计算因子：" prop="calculation_factor" style="width: 60%">
+          <el-input v-model="modbusFormAdd.calculation_factor" style="width: auto"></el-input>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="submitModbusFormAdd('modbusFormAdd')">确定</el-button>
+          <el-button @click="cancleFormAdd('modbusFormAdd')">取消</el-button>
+        </el-form-item>
+      </el-form>
+    </el-dialog>
+    <el-dialog title="编辑modbus变量"  :close-on-click-modal="false" :visible.sync="dialogFormVisibleEdit">
+      <el-form :model="modbusFormEdit" style="margin-left: 27%" :rules="modbusRulesEdit" ref="modbusFormEdit" size="mini" label-width="130px" class="demo-ruleForm">
+        <el-form-item label="设备名称：" prop="device_name" style="width: 60%">
+          <el-input v-model="modbusFormEdit.device_name" disabled style="width: auto"></el-input>
+        </el-form-item>
+        <el-form-item label="变量类别：" prop="tag_category" style="width: 60%">
+          <el-select disabled v-model="modbusFormEdit.tag_category">
+            <el-option label="attributes" value="attributes"></el-option>
+            <el-option label="timeseries" value="timeseries"></el-option>
+            <el-option label="attributeUpdates" value="attributeUpdates"></el-option>
+            <el-option label="rpc" value="rpc"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="变量名：" prop="tag_name" style="width: 60%">
+          <el-input v-model="modbusFormEdit.tag_name" style="width: auto"></el-input>
+        </el-form-item>
+        <el-form-item label="描述：" prop="description" style="width: 60%">
+          <el-input
+            type="textarea"
+            placeholder="请输入内容"
+            v-model="modbusFormEdit.description"
+            maxlength="30"
+            show-word-limit
+          >
+          </el-input>
+        </el-form-item>
+        <el-form-item label="数据类型：" prop="tag_type" style="width: 60%">
+          <el-select v-model="modbusFormEdit.tag_type">
+            <el-option label="string" value="string"></el-option>
+            <el-option label="bits" value="bits"></el-option>
+            <el-option label="8int" value="8int"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="功能码：" prop="function_code" style="width: 60%">
+          <el-input v-model="modbusFormEdit.function_code" style="width: auto"></el-input>
+        </el-form-item>
+        <el-form-item label="长度：" prop="count" style="width: 60%">
+          <el-input v-model="modbusFormEdit.count" style="width: auto"></el-input>
+        </el-form-item>
+        <el-form-item label="地址：" prop="address" style="width: 60%">
+          <el-input v-model="modbusFormEdit.address" style="width: auto"></el-input>
+        </el-form-item>
+        <el-form-item label="数据计算：" prop="data_calculation" style="width: 60%">
+          <el-select v-model="modbusFormEdit.data_calculation">
+            <el-option label="multiplier" value="multiplier"></el-option>
+            <el-option label="Divisor" value="Divisor"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="计算因子：" prop="calculation_factor" style="width: 60%">
+          <el-input v-model="modbusFormEdit.calculation_factor" style="width: auto"></el-input>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="submitModbusFormEdit('modbusFormEdit')">确定</el-button>
+          <el-button @click="cancleFormEdit('modbusFormEdit')">取消</el-button>
+        </el-form-item>
+      </el-form>
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+import $ from "jquery";
+import {
+  addDeviceVariable,
+  deleteDeviceVariableById,
+  selectAllFromDeviceVariable,
+  updateDeviceVariableById
+} from "../../../api/deviceVariable";
+import {addDevice, selectJsonFromDeviceByDeviceName, updateDeviceByDeviceName} from "../../../api/device";
+
+export default {
+  name: "modbusVariableList",
+  data() {
+    return {
+      tableData: {
+        sort: "",
+        order: "",
+        page: 1,
+        rows: [],
+        currentPage: 1,
+        pageSize: 10,
+        total: null,
+      },
+      ruleForm: {
+        unitId: '',
+        sendDataOnlyOnChange: '',
+        deviceName: '',
+        connectAttemptTimeMs: '',
+        attributesPollPeriod: '',
+        connectAttemptCount: '',
+        timeseriesPollPeriod: '',
+        waitAfterFailedAttemptsMs: ''
+      },
+      modbusFormAdd: {
+        deviceName: '',
+        tag_category: '',
+        tag_name: '',
+        description: '',
+        tag_type: '',
+        function_code: '',
+        count: '',
+        address: '',
+        data_calculation: '',
+        calculation_factor: ''
+      },
+      modbusFormEdit: {
+        device_name: '',
+        id:'',
+        tag_category: '',
+        tag_name: '',
+        description: '',
+        tag_type: '',
+        function_code: '',
+        count: '',
+        address: '',
+        data_calculation: '',
+        calculation_factor: ''
+      },
+      rules: {
+        unitId: [
+          {required: true, message: '请输入', trigger: 'blur'},
+          {min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur'}
+        ],
+        sendDataOnlyOnChange: [
+          {required: true, message: '请输入', trigger: 'blur'},
+          {min: 1, max: 50, message: '长度在 1 到 50 个字符', trigger: 'blur'}
+        ],
+        deviceName: [
+          {required: true, message: '请输入', trigger: 'blur'},
+          {min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur'}
+        ],
+        connectAttemptTimeMs: [
+          {required: true, message: '请输入', trigger: 'blur'},
+          {min: 1, max: 10, message: '长度在 1 到 10 个字符', trigger: 'blur'}
+        ],
+        attributesPollPeriod: [
+          {required: true, message: '请输入', trigger: 'blur'},
+          {min: 1, max: 10, message: '长度在 1 到 10 个字符', trigger: 'blur'}
+        ],
+        connectAttemptCount: [
+          {required: true, message: '请输入', trigger: 'blur'},
+          {min: 1, max: 10, message: '长度在 1 到 10 个字符', trigger: 'blur'}
+        ],
+        timeseriesPollPeriod: [
+          {required: true, message: '请输入', trigger: 'blur'},
+          {min: 1, max: 10, message: '长度在 1 到 10 个字符', trigger: 'blur'}
+        ],
+        waitAfterFailedAttemptsMs: [
+          {required: true, message: '请输入', trigger: 'blur'},
+          {min: 1, max: 10, message: '长度在 1 到 10 个字符', trigger: 'blur'}
+        ]
+      },
+      modbusRulesAdd: {
+        tag_category: [
+          { required: true, message: '请选择变量类别', trigger: 'change' }
+        ],
+        tag_name: [
+          {required: true, message: '请输入变量名', trigger: 'blur'},
+          {min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur'}
+        ],
+        description: [
+          {required: true, message: '请输入描述信息', trigger: 'blur'},
+          {min: 1, max: 30, message: '长度在 1 到 30 个字符', trigger: 'blur'}
+        ],
+        tag_type: [
+          { required: true, message: '请选择数据类型', trigger: 'change' }
+        ],
+        function_code: [
+          {required: true, message: '请输入功能码', trigger: 'blur'},
+          {min: 1, max: 30, message: '长度在 1 到 30 个字符', trigger: 'blur'}
+        ],
+        count: [
+          {required: true, message: '请输入长度', trigger: 'blur'},
+          {min: 1, max: 30, message: '长度在 1 到 30 个字符', trigger: 'blur'}
+        ],
+        address: [
+          {required: true, message: '请输入地址', trigger: 'blur'},
+          {min: 1, max: 30, message: '长度在 1 到 30 个字符', trigger: 'blur'}
+        ],
+        data_calculation: [
+          { required: true, message: '请选择计算方式', trigger: 'change' }
+        ],
+        calculation_factor: [
+          {required: true, message: '请输入计算因子', trigger: 'blur'},
+          {min: 1, max: 30, message: '长度在 1 到 30 个字符', trigger: 'blur'}
+        ],
+      },
+      modbusRulesEdit: {
+        tag_category: [
+          { required: true, message: '请选择变量类别', trigger: 'change' }
+        ],
+        tag_name: [
+          {required: true, message: '请输入变量名', trigger: 'blur'},
+          {min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur'}
+        ],
+        description: [
+          {required: true, message: '请输入描述信息', trigger: 'blur'},
+          {min: 1, max: 30, message: '长度在 1 到 30 个字符', trigger: 'blur'}
+        ],
+        tag_type: [
+          { required: true, message: '请选择数据类型', trigger: 'change' }
+        ],
+        function_code: [
+          {required: true, message: '请输入功能码', trigger: 'blur'},
+          {min: 1, max: 30, message: '长度在 1 到 30 个字符', trigger: 'blur'}
+        ],
+        count: [
+          {required: true, message: '请输入长度', trigger: 'blur'},
+          {min: 1, max: 30, message: '长度在 1 到 30 个字符', trigger: 'blur'}
+        ],
+        address: [
+          {required: true, message: '请输入地址', trigger: 'blur'},
+          {min: 1, max: 30, message: '长度在 1 到 30 个字符', trigger: 'blur'}
+        ],
+        data_calculation: [
+          { required: true, message: '请选择计算方式', trigger: 'change' }
+        ],
+        calculation_factor: [
+          {required: true, message: '请输入计算因子', trigger: 'blur'},
+          {min: 1, max: 30, message: '长度在 1 到 30 个字符', trigger: 'blur'}
+        ],
+      },
+      deviceName: '',
+      dialogFormVisibleAdd: false,
+      dialogFormVisibleEdit: false,
+      intervalVariable : null
+    }
+  },
+  created () {
+    this.getParams();
+    this.selectAllFromDeviceVariable();
+    this.selectAllFromDevice(this.deviceName);
+  },
+
+  /*watch: {
+    '$route' (to, from) {
+      // 路由发生变化页面刷新
+      this.getParams();
+      if(this.id != undefined){
+        this.selectAllFromDeviceVariable();
+      }
+
+      if(this.deviceName != undefined){
+        this.selectAllFromDevice(this.deviceName);
+      }
+    }
+  },*/
+
+
+  methods: {
+    setInterval(){
+      if (this.intervalVariable) {
+        clearInterval(this.intervalVariable);
+        this.intervalVariable = null;
+        this.setInterval()
+      } else {
+        this.intervalVariable = setInterval(() => {
+          setTimeout(this.selectAllFromDeviceVariable,0);
+        }, 5000)
+      }
+    },
+
+    getParams(){
+               // 取到路由带过来的参数
+               this.deviceName = this.$route.query.name;
+               this.id = this.$route.query.id;
+               this.ruleForm.unitId = this.$route.query.unit_id;
+               this.ruleForm.deviceName = this.deviceName;
+             },
+
+    selectAllFromDevice(deviceName){
+      selectJsonFromDeviceByDeviceName(deviceName).then(res=>{
+        if(res.data.result){
+           let json = JSON.parse(res.data.data);
+           if(json != null && json != undefined){
+             this.ruleForm.attributesPollPeriod = json.attributesPollPeriod+"";
+             this.ruleForm.timeseriesPollPeriod = json.timeseriesPollPeriod + "";
+             this.ruleForm.sendDataOnlyOnChange = json.sendDataOnlyOnChange+"";
+             this.ruleForm.connectAttemptTimeMs = json.connectAttemptTimeMs+"";
+             this.ruleForm.connectAttemptCount = json.connectAttemptCount + "";
+             this.ruleForm.waitAfterFailedAttemptsMs = json.waitAfterFailedAttemptsMs+"";
+           }
+        }else{
+          this.$message({
+            type: 'error',
+            message: '查询失败!'
+          });
+        }
+      })
+    },
+
+    selectAllFromDeviceVariable(){
+      selectAllFromDeviceVariable(this.id,(this.tableData.currentPage-1)*this.tableData.pageSize,this.tableData.pageSize,this.tableData.sort,this.tableData.order).then(res=>{
+        this.tableData.rows = [];
+        this.tableData.total = null;
+        this.updateHeight();
+        clearInterval(this.intervalVariable);
+        if(res.data.result){
+          this.tableData.rows = res.data.data.data;
+          this.tableData.total =  res.data.data.count;
+          this.setInterval();
+        }
+      })
+    },
+
+
+    handleSizeChange: function (size) {
+      this.tableData.pageSize = size;
+      //this.handleCurrentChange(this.currentPage);
+      this.selectAllFromDevice(this.deviceName);
+    },
+    handleCurrentChange: function (currentPage) {
+      this.tableData.currentPage = currentPage;
+      //this.currentChangePage(this.tableData,currentPage)
+      this.selectAllFromDevice(this.deviceName);
+    },
+    //分页方法（重点）
+    currentChangePage(list,currentPage) {
+      let from = (currentPage - 1) * this.tableData.pageSize;
+      let to = currentPage * this.tableData.pageSize;
+      this.tempList = [];
+      for (; from < to; from++) {
+        if (list[from]) {
+          this.tempList.push(list[from]);
+        }
+      }
+    },
+    submitFormAdd(formName){
+      this.$refs[formName].validate((valid) => {
+        if (valid)
+          this.$confirm('确定保存吗?', '提示', {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }).then(() => {
+            let device = {};
+            device.json = '{"unitId":'+this.ruleForm.unitId+',"deviceName":'+'"'+this.deviceName+'"'+',"attributesPollPeriod":'+this.ruleForm.attributesPollPeriod+
+              ',"timeseriesPollPeriod":'+this.ruleForm.timeseriesPollPeriod+',"sendDataOnlyOnChange":'+this.ruleForm.sendDataOnlyOnChange+
+              ',"connectAttemptTimeMs":'+this.ruleForm.connectAttemptTimeMs+',"connectAttemptCount":'+this.ruleForm.connectAttemptCount+
+              ',"waitAfterFailedAttemptsMs":'+this.ruleForm.waitAfterFailedAttemptsMs
+            +'}';
+            device.device_name = this.deviceName;
+            updateDeviceByDeviceName(device).then(res => {
+                if(res.data.result){
+                  this.$message({
+                    type: 'success',
+                    message: '保存成功!'
+                  });
+                  this.selectAllFromDevice(this.deviceName);
+                  this.$refs[formName].resetFields();
+                }else{
+                  this.$message({
+                    type: 'error',
+                    message: '保存失败!'
+                  });
+                }
+            })
+          })
+      })
+    },
+
+    cancleFormAdd(modbusFormAdd){
+      this.$refs[modbusFormAdd].resetFields();
+      this.dialogFormVisibleAdd = false;
+    },
+
+    cancleFormEdit(modbusFormEdit){
+      this.$refs[modbusFormEdit].resetFields();
+      this.dialogFormVisibleEdit = false;
+    },
+
+    resetForm(formName) {
+      this.$refs[formName].resetFields();
+    },
+    indexMethod(index) {
+      return (this.tableData.currentPage - 1) * this.tableData.pageSize + index + 1
+    },
+
+    submitModbusFormAdd(modbusFormAdd){
+      this.$refs[modbusFormAdd].validate((valid) => {
+        if (valid)
+          this.$confirm('确定保存吗?', '提示', {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }).then(() => {
+            let deviceVariable = {};
+            deviceVariable.tag_category = this.modbusFormAdd.tag_category;
+            deviceVariable.tag_name = this.modbusFormAdd.tag_name;
+            deviceVariable.tag_type = this.modbusFormAdd.tag_type;
+            deviceVariable.function_code = this.modbusFormAdd.function_code;
+            deviceVariable.count = this.modbusFormAdd.count;
+            deviceVariable.address = this.modbusFormAdd.address;
+            deviceVariable.description = this.modbusFormAdd.description;
+            deviceVariable.data_calculation = this.modbusFormAdd.data_calculation;
+            deviceVariable.calculation_factor = this.modbusFormAdd.calculation_factor;
+            deviceVariable.device_name = this.deviceName;
+            addDeviceVariable(deviceVariable).then(res=>{
+                if(res.data.result){
+                  this.$message({
+                    type: 'success',
+                    message: '添加成功!'
+                  });
+                  this.selectAllFromDeviceVariable(this.id,(this.tableData.currentPage-1)*this.tableData.pageSize,this.tableData.pageSize,this.tableData.sort,this.tableData.order);
+                  this.dialogFormVisibleAdd = false;
+                }else{
+                  this.$message({
+                    type: 'error',
+                    message: '添加失败!'
+                  });
+                }
+            })
+          })
+      })
+    },
+
+    submitModbusFormEdit(modbusFormEdit){
+      this.$refs[modbusFormEdit].validate((valid) => {
+        if (valid)
+          this.$confirm('确定编辑吗?', '提示', {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }).then(() => {
+            updateDeviceVariableById(this.modbusFormEdit).then(res=>{
+              if(res.data.result){
+                this.$message({
+                  type: 'success',
+                  message: '编辑成功!'
+                });
+                this.selectAllFromDeviceVariable(this.id,(this.tableData.currentPage-1)*this.tableData.pageSize,this.tableData.pageSize,this.tableData.sort,this.tableData.order);
+                this.dialogFormVisibleEdit = false;
+                this.$refs[modbusFormEdit].resetFields();
+              }else{
+                this.$message({
+                  type: 'error',
+                  message: '编辑失败!'
+                });
+              }
+            })
+          })
+      })
+    },
+
+    handleEdit(index,row){
+      this.modbusFormEdit.calculation_factor = row.calculation_factor+'';
+      this.modbusFormEdit.tag_category = row.tag_category;
+      this.modbusFormEdit.address = row.address;
+      this.modbusFormEdit.count = row.count+'';
+      this.modbusFormEdit.data_calculation = row.data_calculation;
+      this.modbusFormEdit.description = row.description;
+      this.modbusFormEdit.function_code = row.function_code;
+      this.modbusFormEdit.id = row.id;
+      this.modbusFormEdit.tag_name = row.tag_name;
+      this.modbusFormEdit.tag_type = row.tag_type;
+      this.modbusFormEdit.device_name = this.deviceName;
+      this.dialogFormVisibleEdit = true;
+    },
+    handleDelete(index,row){
+      this.$confirm('确定删除吗?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        deleteDeviceVariableById(row.id).then(res=>{
+          if(res.data.result){
+            this.$message({
+              type: 'success',
+              message: '删除成功!'
+            });
+            this.selectAllFromDeviceVariable(this.id,(this.tableData.currentPage-1)*this.tableData.pageSize,this.tableData.pageSize,this.tableData.sort,this.tableData.order);
+          }else{
+            this.$message({
+              type: 'error',
+              message: '删除失败!'
+            });
+          }
+        })
+      })
+    },
+    addVariable(){
+        this.dialogFormVisibleAdd = true;
+        this.modbusFormAdd.deviceName = this.deviceName;
+    },
+    // 更新表格高度
+    updateHeight() {
+      this.tableData.height =
+        window.innerHeight -
+          $(".paginationPanel").height() -
+          $(".toolPanel").height()-$(".basicCan").height()-$(".headName").height()-120;
+    },
+  }
+}
+</script>
+
+<style scoped>
+
+</style>

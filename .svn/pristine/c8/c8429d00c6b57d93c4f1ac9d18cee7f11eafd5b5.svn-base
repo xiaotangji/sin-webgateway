@@ -1,0 +1,137 @@
+<template>
+  <div style="background: white">
+    <el-row>
+      <el-col :span="24">
+        <el-row>
+          <el-card class="box-card">
+            <div slot="header" class="clearfix">
+              <span class="card-name">状态</span>
+            </div>
+            <div>
+              <el-col :span="6" v-for="(item,index) in pieDataList" :key="index" style="display: flex;justify-content: center;">
+                <echarts-status :pieData="item" />
+              </el-col>
+            </div>
+          </el-card>
+        </el-row>
+        <el-row>
+          <el-col :span="12">
+            <status-card-form :formParams="formParamsLeft"/>
+          </el-col>
+          <el-col :span="12">
+              <status-card-form :formParams="formParamsRight"/>
+          </el-col>
+        </el-row>
+      </el-col>
+    </el-row>
+  </div>
+</template>
+
+<script>
+  import {getSystemInfo} from "../../../api/system";
+
+  const formModelLeft = {
+    name: '',
+    type: '',
+    serialNumber: '',
+    MACAddress: '',
+    firmwareVersion: ''
+  }
+  const formLabelLeft = [
+    {prop:"name", label:"名称:", width:"180",type: 'input'},
+    {prop:"type", label:"型号:", width:"180",type: 'input'},
+    {prop:"serialNumber", label:"序列号:", width:"180",type: 'input'},
+    {prop:"MACAddress", label:"MAC地址:", width:"180",type: 'input'},
+    {prop:"firmwareVersion", label:"固件版本:", width:"180",type: 'input'},
+  ]
+  const formModelRight = {
+    version: '',
+    type: '',
+    operatingStatus: '',
+    usedInternalMemory: '',
+    operationHours: ''
+  }
+  const formLabelRight = [
+    {prop:"version", label:"版本:", width:"180",type: 'input'},
+    {prop:"type", label:"型号:", width:"180",type: 'input'},
+    {prop:"operatingStatus", label:"运行状态:", width:"180",type: 'input'},
+    {prop:"usedInternalMemory", label:"占用内存:", width:"180",type: 'input'},
+    {prop:"operationHours", label:"运行时间:", width:"180",type: 'input'},
+  ]
+
+  import echartsStatus from "./components/echartsStatus";
+  import statusCardForm from "./components/statusCardForm";
+  export default {
+    name: "systemStatus",
+    components: {statusCardForm,echartsStatus},
+    data() {
+      return {
+        formParamsLeft: {
+          cardName: '系统信息',
+          formModel: formModelLeft,
+          formLabel: formLabelLeft,
+        },
+        formParamsRight: {
+          cardName: '网关服务',
+          formModel: formModelRight,
+          formLabel: formLabelRight,
+        },
+        pieDataList: [
+          {pieTitle: '负载状态', pieStatus: '运行流畅',
+            data: [{value:40, name:'负载量'}, {value:60, name:'剩余量'}],
+            color: ['#2D8cF0','#d1d7dc']},
+          {pieTitle: 'CPU使用率', pieStatus: '1核心',
+            data: [],
+            color: ['#d01a44','#d1d7dc']},
+          {pieTitle: '内存使用率', pieStatus: '545/772(MB)',
+            data: [{value:40, name:'内存使用量'}, {value:60, name:'剩余量'}],
+            color: ['#2D8cF0','#d1d7dc']},
+          {pieTitle: '/', pieStatus: '11G/20G',
+            data: [{value:40, name:'负载量'}, {value:60, name:'剩余量'}],
+            color: ['#d01a44','#d1d7dc']},
+        ]
+        /*pieData: {
+          pieTitle: '负载状态',
+          pieStatus: '运行流畅',
+          data: [
+            {value:40, name:'负载量'},
+            {value:60, name:'剩余量'}
+          ]
+        }*/
+      }
+    },
+    created() {
+      this.formParamsLeft.formModel = {
+        name: '1',
+        type: '2',
+        serialNumber: 'a',
+        MACAddress: 'b',
+        firmwareVersion: 'c'
+      },
+        this.getSystemInfo();
+    },
+    methods: {
+      getSystemInfo(){
+        getSystemInfo(null).then(res=>{
+            if(res.data.result){
+              let cpu = res.data.data.cpuPercent;
+              let cpuSurplus = 100 - cpu;
+              this.pieDataList[1].data.push({value:cpu, name:'负载量'}, {value:cpuSurplus, name:'剩余量'})
+            }else{
+              this.$message({
+                type: 'error',
+                message: '查询失败!'
+              });
+            }
+        })
+      }
+    }
+  }
+</script>
+
+<style scoped>
+  .card-name {
+    font-size: 15px;
+    font-weight: bold;
+  }
+</style>

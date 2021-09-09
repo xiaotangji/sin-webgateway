@@ -1,0 +1,67 @@
+@font-face {
+  font-family: "iconfont"; /* Project id 2611516 */
+  src: url('iconfont.woff2?t=1625620997694') format('woff2'),
+       url('iconfont.woff?t=1625620997694') format('woff'),
+       url('iconfont.ttf?t=1625620997694') format('truetype');
+}
+
+.iconfont {
+  font-family: "iconfont" !important;
+  font-size: 16px;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.iot-wenhao:before {
+  content: "\e75c";
+}
+
+.iot-wangluofuwu:before {
+  content: "\e614";
+}
+
+.iot-fangwenkongzhiliebiaoacl:before {
+  content: "\e612";
+}
+
+.iot-fanghuoqiang:before {
+  content: "\e78c";
+}
+
+.iot-wangluo_wangluodizhizhuanhuanNAT:before {
+  content: "\e609";
+}
+
+.iot-DHCPfuwu:before {
+  content: "\e77c";
+}
+
+.iot-luyou-status:before {
+  content: "\e6ab";
+}
+
+.iot-jingtailuyou:before {
+  content: "\e600";
+}
+
+.iot-luyou:before {
+  content: "\e75f";
+}
+
+.iot-mimakejian:before {
+  content: "\e604";
+}
+
+.iot-mimabukejian:before {
+  content: "\e605";
+}
+
+.iot-erjijindu-WALNicon:before {
+  content: "\e63e";
+}
+
+.iot-yitaiwang:before {
+  content: "\e6b7";
+}
+
